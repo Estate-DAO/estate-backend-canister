@@ -12,7 +12,7 @@ pub struct CanisterState {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
 pub struct UserBookingDetails{
-    pub book_room_response: BookRoomResponse,
+    pub book_room_response: Option<BookRoomResponse>,
     pub user_selected_hotel_details: HotelRoomDetails
 }
 

@@ -1,0 +1,6 @@
+
+[workspace]
+members = [
+    "src/estate-be",
+]
+resolver = "2"

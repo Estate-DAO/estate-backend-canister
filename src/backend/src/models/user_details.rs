@@ -1,5 +1,49 @@
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
+use crate:: Booking;
+
+#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
+pub struct UserProfile {
+    pub primary_user: AdultDetail,
+    pub bookings: Vec<Booking>
+}
+
+impl UserProfile {
+    pub fn new(primary_user: AdultDetail) -> Result<Self, String> {
+        // Validate that primary user has required contact info
+        if primary_user.email.is_none() || primary_user.phone.is_none() {
+            return Err("Primary user must have email and phone".into());
+        }
+
+        Ok(Self {
+            primary_user,
+            bookings: Vec::new(),
+        })
+    }
+
+    pub fn get_contact_info(&self) -> Option<(String, String)> {
+        match (&self.primary_user.email, &self.primary_user.phone) {
+            (Some(email), Some(phone)) => Some((email.clone(), phone.clone())),
+            _ => None
+        }
+    }
+
+    pub fn add_booking(&mut self, booking: Booking) -> Result<(), String> {
+        // Check for duplicate booking_id
+        if self.bookings.iter().any(|b| b.booking_id == booking.booking_id) {
+            return Err("Booking ID already exists".into());
+        }
+
+        self.bookings.push(booking);
+        Ok(())
+    }
+
+    pub fn get_all_booking_summaries(&self) -> Vec<String> {
+        self.bookings.iter()
+            .map(|booking| booking.get_booking_summary())
+            .collect()
+    }
+}
 
 // UserDetails scope
 #[derive(CandidType,Serialize,Deserialize,Default, Clone, Debug)]

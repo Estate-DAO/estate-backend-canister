@@ -2,6 +2,81 @@ use std::collections::BTreeMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDate;
+use crate::{PaymentDetails, UserDetails};
+
+#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
+pub struct Booking {
+    pub booking_id: String,
+    pub guests: UserDetails,
+    pub booking_details: UserBookingDetails,
+    pub payment_details: PaymentDetails,
+}
+
+impl Booking {
+    pub fn new(
+        booking_id: String,
+        guests: UserDetails,
+        booking_details: UserBookingDetails,
+        payment_details: PaymentDetails,
+    ) -> Result<Self, String> {
+        let booking = Self {
+            booking_id,
+            guests,
+            booking_details,
+            payment_details,
+        };
+        
+        booking.validate()?;
+        Ok(booking)
+    }
+
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate guests exist
+        if self.guests.adults.is_empty() {
+            return Err("At least one adult guest required".into());
+        }
+
+        // Validate room allocation matches guest count
+        let total_guests = self.guests.total_guests();
+        if total_guests > (self.booking_details.user_selected_hotel_room_details.room_details.len() * 4) {
+            return Err("Not enough rooms for guest count".into());
+        }
+
+        Ok(())
+    }
+
+    pub fn get_booking_status(&self) -> BookingStatus {
+        self.booking_details
+            .book_room_response
+            .as_ref()
+            .map(|r| r.status.clone())
+            .unwrap_or(BookingStatus::BookFailed)
+    }
+
+    pub fn get_total_amount(&self) -> f64 {
+        self.booking_details.user_selected_hotel_room_details.requested_payment_amount
+    }
+
+    pub fn get_booking_summary(&self) -> String {
+        let hotel = &self.booking_details.user_selected_hotel_room_details.hotel_details;
+        let date_range = &self.booking_details.user_selected_hotel_room_details.date_range;
+        
+        format!(
+            "{} at {} ({} nights) - {}",
+            hotel.hotel_name,
+            self.booking_details.user_selected_hotel_room_details.destination
+                .as_ref()
+                .map(|d| d.city.as_str())
+                .unwrap_or("Unknown"),
+            date_range.no_of_nights(),
+            self.payment_details.get_status_display()
+        )
+    }
+
+    pub fn is_confirmed(&self) -> bool {
+        matches!(self.get_booking_status(), BookingStatus::Confirmed)
+    }
+}
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
 pub struct UserBookingDetails{
@@ -118,4 +193,37 @@ pub enum BookingStatus {
     BookFailed = 0,
     Confirmed = 1,
 }
- 
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
+pub struct BookingSummary {
+    pub booking_id: String,
+    pub user_email: String,
+    pub hotel_name: String,
+    pub destination: String,
+    pub nights: u32,
+    pub payment_status: String,
+    pub booking_status: BookingStatus,
+}
+
+impl From<(&str, &Booking)> for BookingSummary {
+    fn from((email, booking): (&str, &Booking)) -> Self {
+        let hotel = &booking.booking_details.user_selected_hotel_room_details.hotel_details;
+        let destination = booking.booking_details.user_selected_hotel_room_details
+            .destination.as_ref()
+            .map(|d| d.city.clone())
+            .unwrap_or_default();
+        
+        BookingSummary {
+            booking_id: booking.booking_id.clone(),
+            user_email: email.to_string(),
+            hotel_name: hotel.hotel_name.clone(),
+            destination,
+            nights: booking.booking_details.user_selected_hotel_room_details.date_range.no_of_nights(),
+            payment_status: booking.payment_details.get_status_display(),
+            booking_status: booking.booking_details.book_room_response
+                .as_ref()
+                .map(|r| r.status.clone())
+                .unwrap_or_default(),
+        }
+    }
+}

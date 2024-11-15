@@ -1,0 +1,43 @@
+#  znxnh-f2v3a-dwwtd-jhyr2-tzdg7-xrm43-xf6xc-q4nfk-arhfb-54k5n-zae
+
+name: test balance
+on:
+    workflow_dispatch:
+      inputs:
+        deploy_message:
+          description: 'Deployment message'
+          required: false
+          default: 'Manual deployment'
+          type: string
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test balance
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: write
+
+    steps:
+
+      - name: Install quill from GitHub Releases
+        run: |
+          curl -LJO https://github.com/dfinity/quill/releases/download/v0.4.2/quill-linux-x86_64-musl
+          mv quill-linux-x86_64-musl quill
+          chmod +x quill
+      - name: Stake Neuron
+        run: |
+          touch actions_identity.pem
+          echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
+          ./quill --pem-file actions_identity.pem  account-balance znxnh-f2v3a-dwwtd-jhyr2-tzdg7-xrm43-xf6xc-q4nfk-arhfb-54k5n-zae > stake_request.json
+          
+          # Send the stake request
+          ./quill send stake_request.json --yes  | tee stake_response.log
+          
+          # Wait for confirmation
+          sleep 10

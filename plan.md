@@ -19,8 +19,10 @@ block_room
 book_room
 payment
 
+Frontend INTEGRATION
 
-1. (api.rs) backend -- UserDetails + BookingDetails + Paymentdetails
+1. (api.rs) PROCEED_TO_PAY_BUTTON -> backend_call WITH UserDetails + BookingDetails + ~~Paymentdetails~~
 2. - payments_response
-- success => book_room => book_room_response (api.rs)
-- fail => update backend (api.rs)
+- success => backedn_call WITH PaymentDetails
+          => book_room => book_room_response (api.rs)
+- fail => backend_call WITH PaymentDetails (api.rs)

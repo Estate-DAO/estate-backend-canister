@@ -1,6 +1,6 @@
 
 [workspace]
 members = [
-    "src/estate-be",
+    "src/backend",
 ]
 resolver = "2"

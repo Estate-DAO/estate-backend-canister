@@ -2,194 +2,105 @@ use std::collections::BTreeMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
+
+mod payment_details;
+pub use payment_details::*;
+
+mod user_details;
+pub use user_details::*;
+
+mod booking_details;
+pub use booking_details::*;
+
+
+/// todo a user can have many bookings -> Vec
+/// He does
+/// 
+/// todo a user can have many payment details (corresponding to each booking?) -> Vec
+/// user has many bookings, & each booking has its payment details
+/// 
+/// todo booking -> payment details
+/// booking has payment details
+/// 
+/// todo query -> user(email) list all booking WITH payment details
+/// via get_user_bookings
+
+
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct CanisterState {
-    pub user_details: UserDetails,
-    pub booking_details: UserBookingDetails ,
-    pub payment_details: PaymentDetails,
+    // Map from email/phone watever to UserProfile
+    pub users: BTreeMap<String, UserProfile>
 }
 
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct UserBookingDetails{
-    pub book_room_response: Option<BookRoomResponse>,
-    pub user_selected_hotel_details: HotelRoomDetails
-}
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct HotelRoomDetails{
-    hotel_details: HotelDetails,
-    start_date: (u32,u32,u32),
-    end_date: (u32,u32,u32) ,
-    destination: Destination,
-    room_details: Vec<RoomDetails>,
-    /// shown to the user at block_room API call
-    requested_payment_amount: f64
-}
-
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct RoomDetails{
-    room_name: String,
-    room_unique_id: String,
-}
-
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct HotelDetails {
-    pub name: String,
-    pub hotel_code: String,
-}
-
-/// Payment -- status "to payment gateway?"
-/// payment_provider -> "TX_NUMBER_13434" /  "PAYMENT_FAILED"
-
-
-#[derive(Clone, Default, Debug)]
-pub struct UserDetails {
-    pub adults: Vec<AdultDetail>,
-    pub children: Vec<ChildDetail>,
-    pub terms_accepted: bool,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct AdultDetail {
-    pub first_name: String,
-    pub last_name: Option<String>,
-    pub email: Option<String>, // Only for first adult
-    pub phone: Option<String>, // Only for first adult
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct ChildDetail {
-    pub first_name: String,
-    pub last_name: Option<String>,
-    pub age: Option<u8>,
-}
- 
-
-
-#[derive(CandidType,Serialize, Deserialize, Debug, Clone)]
-pub struct BookRoomResponse {
-    #[serde(rename = "Status")]
-    pub status: BookingStatus,
-
-    #[serde(rename = "Message")]
-    pub message: Option<String>,
-
-    #[serde(rename = "CommitBooking")]
-    pub commit_booking: Vec<BookingDetails>,
-}
-
-#[derive(CandidType,Serialize, Deserialize, Debug, Clone)]
-pub struct BookingDetails {
-    pub booking_id: String,
-
-    pub booking_ref_no: String,
-
-    pub confirmation_no: String,
-
-    pub booking_status: String,
-}
-
-#[derive(CandidType,Serialize, Deserialize, Debug, Clone)]
-pub enum BookingStatus {
-    #[serde(rename = "BookFailed")]
-    BookFailed = 0,
-    #[serde(rename = "Confirmed")]
-    Confirmed = 1,
-}
- 
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct PaymentDetails {
-    pub booking_id: String,
-    pub payment_status: PaymentStatus,
- }
-
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-pub enum PaymentStatus {
-    /// transaction reference number from payments provider
-    Paid(String),
-    /// if the transaction failed, that would be here.
-    Unpaid(Option<String>),
-}
+impl CanisterState {
+    pub fn new() -> Self {
+        Self::default()
+    }
     
+    pub fn register_user(&mut self, adult: AdultDetail) -> Result<(), String> {
+        let email = adult.email.as_ref()
+            .ok_or("Email required for registration")?
+            .clone();
+            
+        if self.users.contains_key(&email) {
+            return Err("User already registered".into());
+        }
 
-// #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-// pub struct RentalTransaction {
-//     pub booking_id: u64,
-//     pub car_id: u64,
-//     pub customer_principal_id: Principal,
-//     pub customer: Option<CustomerDetails>,
-//     pub total_amount: f64,
-//     pub payment_status: PaymentStatus,
-// }
+        let profile = UserProfile::new(adult)?;
+        self.users.insert(email, profile);
+        Ok(())
+    }
 
-// #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-// pub struct TransactionHistory {
-//     pub booking_id: u64,
-//     pub car_id: u64,
-//     pub customer_principal_id: Principal,
-//     pub customer: Option<CustomerDetails>,
-//     pub start_timestamp: String, // Unix timestamp
-//     pub end_timestamp: String,   // Unix timestamp
-//     pub total_amount: f64,
-//     pub payment_status: PaymentStatus,
-// }
+    pub fn add_booking(&mut self, email: &str, booking: Booking) -> Result<(), String> {
+        let user_profile = self.users.get_mut(email)
+            .ok_or("User not found")?;
+        
+        user_profile.add_booking(booking)
+    }
 
-// impl RentalTransaction {
+    pub fn get_user_profile(&self, email: &str) -> Option<&UserProfile> {
+        self.users.get(email)
+    }
 
-//     pub fn to_transaction_history(&self) -> TransactionHistory {
-//         TransactionHistory {
-//             booking_id: self.booking_id, 
-//             car_id: self.car_id, 
-//             customer_principal_id: self.customer_principal_id.clone(), 
-//             customer: self.customer.clone(),
-//             start_timestamp: format_datetime(self.start_timestamp),
-//             end_timestamp: format_datetime(self.end_timestamp),
-//             total_amount: self.total_amount,
-//             payment_status: self.payment_status.clone()
-//         }
-//     }
+    pub fn get_user_bookings(&self, email: &str) -> Option<&Vec<Booking>> {
+        self.users.get(email).map(|profile| &profile.bookings)
+    }
 
-// }
+    pub fn get_booking(&self, email: &str, booking_id: &str) -> Option<&Booking> {
+        self.users.get(email)?.bookings.iter()
+            .find(|b| b.booking_id == booking_id)
+    }
 
-// #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-// pub struct CustomerDetails {
-//     pub name: String,
-//     pub email: String,
-//     pub country_code: String,
-//     pub mobile_number: String,
-//     pub age: u8,
-//     pub pan: String, 
-//     pub aadhar: String,
-// }
+    pub fn update_booking(&mut self, email: &str, booking_id: &str, booking: Booking) -> Result<(), String> {
+        let user_profile = self.users.get_mut(email)
+            .ok_or("User not found")?;
+        
+        let booking_index = user_profile.bookings.iter()
+            .position(|b| b.booking_id == booking_id)
+            .ok_or("Booking not found")?;
 
-// impl CustomerDetails {
-//     pub fn validate_details(&self) -> Result<(), String> {
-//         if self.name.trim().len() < 3 {return  Err("Invalid Name, please provide a name with more than 4 characters.".into()) ;}
-//         if self.email.trim().len() < 5 {return  Err("Invalid email, please provide a valid email adress".into()) ;}
-//         if self.country_code.trim().len() != 2  {return  Err("Invalid country code, please provide a valid country code".into()) ;}
-//         if self.mobile_number.trim().len() != 10  {return  Err("Invalid mobile number, please provide a 10 digits mobile number".into()) ;}
-//         if (self.pan.trim().is_empty() || self.pan.trim().len() < 10) && (self.aadhar.trim().is_empty() || self.aadhar.trim().len() != 12)  {return  Err("Invalid documents, please provide a PAN or Aadhar".into()) ;}
-//         if self.age < 18  {return  Err("Invalid age, age should be atleast 18".into()) ;}
-//         Ok(())
-//     }
-// }
+        user_profile.bookings[booking_index] = booking;
+        Ok(())
+    }
 
-// #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-// pub struct Customer {
-//     pub principal: Principal,
-//     pub name: String,
-//     pub email: String,
-//     pub phone_number: String,
-//     pub id_type: Option<IdType>,
-// }
+    pub fn cancel_booking(&mut self, email: &str, booking_id: &str) -> Result<(), String> {
+        let user_profile = self.users.get_mut(email)
+            .ok_or("User not found")?;
+        
+        let booking_index = user_profile.bookings.iter()
+            .position(|b| b.booking_id == booking_id)
+            .ok_or("Booking not found")?;
 
-// #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
-// pub enum IdType {
-//     Aadhar(String),
-//     PAN(String),
-// }
- 
+        user_profile.bookings.remove(booking_index);
+        Ok(())
+    }
+
+    pub fn get_all_bookings(&self) -> Vec<BookingSummary> {
+        self.users.iter()
+            .flat_map(|(email, profile)| {
+                profile.bookings.iter()
+                    .map(|booking| BookingSummary::from((email.as_str(), booking)))
+            })
+            .collect()
+    }
+}

@@ -34,10 +34,6 @@ jobs:
         run: |
           touch actions_identity.pem
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
-          ./quill --pem-file actions_identity.pem  account-balance znxnh-f2v3a-dwwtd-jhyr2-tzdg7-xrm43-xf6xc-q4nfk-arhfb-54k5n-zae > stake_request.json
+          ./quill --pem-file actions_identity.pem  account-balance "znxnh-f2v3a-dwwtd-jhyr2-tzdg7-xrm43-xf6xc-q4nfk-arhfb-54k5n-zae" -y | tee response.txt
           
-          # Send the stake request
-          ./quill send stake_request.json --yes  | tee stake_response.log
-          
-          # Wait for confirmation
           sleep 10

@@ -36,11 +36,11 @@ impl Booking {
             return Err("At least one adult guest required".into());
         }
 
-        // Validate room allocation matches guest count
-        let total_guests = self.guests.total_guests();
-        if total_guests > (self.booking_details.user_selected_hotel_room_details.room_details.len() * 4) {
-            return Err("Not enough rooms for guest count".into());
-        }
+        // // Validate room allocation matches guest count
+        // let total_guests = self.guests.total_guests();
+        // if total_guests > (self.booking_details.user_selected_hotel_room_details.room_details.len() * 4) {
+        //     return Err("Not enough rooms for guest count".into());
+        // }
 
         Ok(())
     }
@@ -91,6 +91,7 @@ pub struct HotelRoomDetails{
     pub date_range: SelectedDateRange,
     pub destination: Option<Destination>,
     pub room_details: Vec<RoomDetails>,
+    /// amount shown on block_room
     pub requested_payment_amount: f64
 }
 

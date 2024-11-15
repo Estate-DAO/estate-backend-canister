@@ -32,7 +32,6 @@ jobs:
         run: |
           touch actions_identity.pem
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
-          # Create a new neuron with 1 ICP stake
           ./quill --pem-file actions_identity.pem neuron-stake \
             --amount 500 \
             --name "estate_N" > stake_request.json

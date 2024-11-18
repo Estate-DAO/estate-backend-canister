@@ -28,12 +28,18 @@ jobs:
           curl -LJO https://github.com/dfinity/quill/releases/download/v0.4.2/quill-linux-x86_64-musl
           mv quill-linux-x86_64-musl quill
           chmod +x quill
+
+      - name: Checkout repo and submodules
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - name: Stake Neuron
         run: |
           touch actions_identity.pem
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
           ./quill --pem-file actions_identity.pem sns stake-neuron \
-            --amount 500 --memo 69420 | tee stake_request.json
+            --amount 500 --memo 69420 --canister-ids-file ./sns_canister_ids.json | tee stake_request.json
           
           # Send the stake request
           # ./quill send stake_request.json --yes  | tee stake_response.log

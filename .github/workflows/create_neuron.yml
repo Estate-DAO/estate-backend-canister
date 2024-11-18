@@ -42,5 +42,8 @@ jobs:
           ./quill --pem-file actions_identity.pem sns stake-neuron \
             --amount 500 --memo 69420 --canister-ids-file ./sns_canister_ids.json | tee stake_request.json
           
+          # Send the stake request
+          ./quill send stake_request.json --yes  | tee stake_response.log
+          
           # Wait for confirmation
           sleep 10

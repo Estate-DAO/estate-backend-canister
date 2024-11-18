@@ -33,8 +33,7 @@ jobs:
           touch actions_identity.pem
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
           ./quill --pem-file actions_identity.pem sns stake-neuron \
-            --amount 500 \
-            --name "estate_N" | tee stake_request.json
+            --amount 500 | tee stake_request.json
           
           # Send the stake request
           # ./quill send stake_request.json --yes  | tee stake_response.log

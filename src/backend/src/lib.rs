@@ -20,6 +20,10 @@ fn init_hook() {
     });
 }
 
+////////////////////////////
+// upgrade API 
+////////////////////////////
+
 #[pre_upgrade]
 fn pre_upgrade() {
     STATE.with(|state| {
@@ -44,29 +48,18 @@ fn post_upgrade() {
     }
 }
 
-#[ic_cdk_macros::query]
-fn get_state() -> CanisterState {
-    STATE.with(|state| state.borrow().clone())
-}
+////////////////////////////
+
+
+
+////////////////////////////
+// CREATE / UPDATE 
+////////////////////////////
 
 #[ic_cdk_macros::update]
 fn add_booking(email: String, booking: Booking) -> Result<(), String> {
     STATE.with(|state| {
         state.borrow_mut().add_booking(&email, booking)
-    })
-}
-
-#[ic_cdk_macros::query]
-fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
-    STATE.with(|state| {
-        state.borrow().get_user_bookings(&email).cloned()
-    })
-}
-
-#[ic_cdk_macros::query]
-fn get_booking(email: String, booking_id: String) -> Option<Booking> {
-    STATE.with(|state| {
-        state.borrow().get_booking(&email, &booking_id).cloned()
     })
 }
 
@@ -84,11 +77,33 @@ fn cancel_booking(email: String, booking_id: String) -> Result<(), String> {
     })
 }
 
+
+
+////////////////////////////
+// READ
+////////////////////////////
+
+#[ic_cdk_macros::query]
+fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
+    STATE.with(|state| {
+        state.borrow().get_user_bookings(&email).cloned()
+    })
+}
+
+#[ic_cdk_macros::query]
+fn get_booking(email: String, booking_id: String) -> Option<Booking> {
+    STATE.with(|state| {
+        state.borrow().get_booking(&email, &booking_id).cloned()
+    })
+}
+
 #[ic_cdk_macros::query]
 fn get_all_bookings() -> Vec<BookingSummary> {
     STATE.with(|state| {
         state.borrow().get_all_bookings()
     })
 }
+
+
 
 ic_cdk_macros::export_candid!();

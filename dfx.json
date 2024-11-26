@@ -1,0 +1,17 @@
+{
+    "canisters": {
+      "estate_backend": {
+        "candid": "src/backend/can.did",
+        "package": "estate_backend",
+        "type": "rust"
+      }
+    },
+    "defaults": {
+      "build": {
+        "args": "",
+        "packtool": ""
+      }
+    },
+    "output_env_file": ".env",
+    "version": 1
+  }

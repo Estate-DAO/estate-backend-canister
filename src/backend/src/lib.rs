@@ -1,8 +1,9 @@
 mod models;
+use candid::CandidType;
 pub use models::*;
 
 use std::cell::RefCell;
-use ic_cdk::{storage, post_upgrade, pre_upgrade};
+use ic_cdk::{storage, post_upgrade, pre_upgrade, print};
 
 
 thread_local! {
@@ -17,6 +18,11 @@ fn init() {
 fn init_hook() {
     STATE.with(|state| {
         let mut state = state.borrow_mut();
+        
+        if state.users.is_empty() {
+            // Insert a default user if the map is empty
+            state.users.insert("a@b.com".to_string(), UserInfoAndBookings::default());
+        }
     });
 }
 
@@ -57,25 +63,40 @@ fn post_upgrade() {
 ////////////////////////////
 
 #[ic_cdk_macros::update]
-fn add_booking(email: String, booking: Booking) -> Result<(), String> {
+fn add_booking(email: String, booking: Booking) -> Result<String, String> {
     STATE.with(|state| {
         state.borrow_mut().add_booking(&email, booking)
     })
 }
 
-#[ic_cdk_macros::update]
-fn update_booking(email: String, booking_id: String, booking: Booking) -> Result<(), String> {
-    STATE.with(|state| {
-        state.borrow_mut().update_booking(&email, &booking_id, booking)
-    })
-}
 
-#[ic_cdk_macros::update]
-fn cancel_booking(email: String, booking_id: String) -> Result<(), String> {
-    STATE.with(|state| {
-        state.borrow_mut().cancel_booking(&email, &booking_id)
-    })
-}
+// #[ic_cdk_macros::update]
+// fn update_book_room_response(booking_id: BookingId, book_room_response: BookRoomResponse) -> Result<(), String> {
+//     STATE.with(|state| {
+//         state.borrow_mut().update_book_room_response(booking_id, book_room_response)
+//     })
+// }
+
+// #[ic_cdk_macros::update]
+// fn update_payment_details(booking_id: BookingId, payment_details: PaymentDetails) -> Result<(), String> {
+//     STATE.with(|state| {
+//         state.borrow_mut().update_payment_details(booking_id, payment_details)
+//     })
+// }
+
+// #[ic_cdk_macros::update]
+// fn update_booking(email: String, booking_id: String, booking: Booking) -> Result<(), String> {
+//     STATE.with(|state| {
+//         state.borrow_mut().update_booking(&email, &booking_id, booking)
+//     })
+// }
+
+// #[ic_cdk_macros::update]
+// fn cancel_booking(email: String, booking_id: String) -> Result<(), String> {
+//     STATE.with(|state| {
+//         state.borrow_mut().cancel_booking(&email, &booking_id)
+//     })
+// }
 
 
 
@@ -86,24 +107,34 @@ fn cancel_booking(email: String, booking_id: String) -> Result<(), String> {
 #[ic_cdk_macros::query]
 fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
     STATE.with(|state| {
-        state.borrow().get_user_bookings(&email).cloned()
+        state.borrow().get_user_bookings(&email).map(|bookings| bookings.values().cloned().collect())
     })
 }
 
-#[ic_cdk_macros::query]
-fn get_booking(email: String, booking_id: String) -> Option<Booking> {
-    STATE.with(|state| {
-        state.borrow().get_booking(&email, &booking_id).cloned()
-    })
-}
+// #[ic_cdk_macros::query]
+// fn get_booking(email: String, booking_id: String) -> Option<Booking> {
+//     STATE.with(|state| {
+//         state.borrow().get_booking(&email, &booking_id).cloned()
+//     })
+// }
 
-#[ic_cdk_macros::query]
-fn get_all_bookings() -> Vec<BookingSummary> {
-    STATE.with(|state| {
-        state.borrow().get_all_bookings()
-    })
-}
+// #[ic_cdk_macros::query]
+// fn get_all_bookings() -> Vec<BookingSummary> {
+//     STATE.with(|state| {
+//         state.borrow().get_all_bookings()
+//     })
+// }
 
+
+// #[ic_cdk_macros::query]
+// fn greet(GreetParams(name): GreetParams) -> GreetResponse {
+//     let caller = ic_cdk::caller();
+    
+//     print!("greet - {caller:?}");
+
+//     let resp_strng = format!("Hello, {}!", name);
+//     GreetResponse(resp_strng)
+// }
 
 
 ic_cdk_macros::export_candid!();

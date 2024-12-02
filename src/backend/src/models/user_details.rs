@@ -1,25 +1,29 @@
+use std::collections::BTreeMap;
+
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 use crate:: Booking;
 
+use super::BookingId;
+
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
-pub struct UserProfile {
+pub struct UserInfoAndBookings {
     pub primary_user: AdultDetail,
-    pub bookings: Vec<Booking>
+    pub bookings: BTreeMap<BookingId,Booking>
 }
 
-impl UserProfile {
-    pub fn new(primary_user: AdultDetail) -> Result<Self, String> {
-        // Validate that primary user has required contact info
-        if primary_user.email.is_none() || primary_user.phone.is_none() {
-            return Err("Primary user must have email and phone".into());
-        }
+impl UserInfoAndBookings {
+    // pub fn new(primary_user: AdultDetail) -> Result<Self, String> {
+    //     // Validate that primary user has required contact info
+    //     if primary_user.email.is_none() || primary_user.phone.is_none() {
+    //         return Err("Primary user must have email and phone".into());
+    //     }
 
-        Ok(Self {
-            primary_user,
-            bookings: Vec::new(),
-        })
-    }
+    //     Ok(Self {
+    //         primary_user,
+    //         bookings: BTreeMap::new(),
+    //     })
+    // }
 
     pub fn get_contact_info(&self) -> Option<(String, String)> {
         match (&self.primary_user.email, &self.primary_user.phone) {
@@ -28,21 +32,31 @@ impl UserProfile {
         }
     }
 
+    // pub fn add_booking(&mut self, booking: Booking) -> Result<(), String> {
+    //     // Check for duplicate booking_id
+    //     if self.bookings.iter().any(|b| b.booking_id == booking.booking_id) {
+    //         return Err("Booking ID already exists".into());
+    //     }
+
+    //     self.bookings.push(booking);
+    //     Ok(())
+    // }
+
     pub fn add_booking(&mut self, booking: Booking) -> Result<(), String> {
         // Check for duplicate booking_id
-        if self.bookings.iter().any(|b| b.booking_id == booking.booking_id) {
+        if self.bookings.contains_key(&booking.booking_id) {
             return Err("Booking ID already exists".into());
         }
 
-        self.bookings.push(booking);
+        self.bookings.insert(booking.booking_id.clone(), booking); // Insert into BTreeMap
         Ok(())
     }
 
-    pub fn get_all_booking_summaries(&self) -> Vec<String> {
-        self.bookings.iter()
-            .map(|booking| booking.get_booking_summary())
-            .collect()
-    }
+    // pub fn get_all_booking_summaries(&self) -> Vec<String> {
+    //     self.bookings.iter()
+    //         .map(|booking| booking.get_booking_summary())
+    //         .collect()
+    // }
 }
 
 // UserDetails scope
@@ -57,17 +71,17 @@ impl UserDetails {
         Self::default()
     }
 
-    pub fn add_adult(&mut self, adult: AdultDetail) {
-        self.adults.push(adult);
-    }
+    // pub fn add_adult(&mut self, adult: AdultDetail) {
+    //     self.adults.push(adult);
+    // }
 
-    pub fn add_child(&mut self, child: ChildDetail) -> Result<(), String> {
-        if child.age > 18 {
-            return Err("Child must be under 18 years old".into());
-        }
-        self.children.push(child);
-        Ok(())
-    }
+    // pub fn add_child(&mut self, child: ChildDetail) -> Result<(), String> {
+    //     if child.age > 18 {
+    //         return Err("Child must be under 18 years old".into());
+    //     }
+    //     self.children.push(child);
+    //     Ok(())
+    // }
 
     pub fn get_primary_contact(&self) -> Option<(String, String)> {
         self.adults.first().and_then(|adult| {
@@ -78,9 +92,9 @@ impl UserDetails {
         })
     }
 
-    pub fn total_guests(&self) -> usize {
-        self.adults.len() + self.children.len()
-    }
+    // pub fn total_guests(&self) -> usize {
+    //     self.adults.len() + self.children.len()
+    // }
 
     pub fn validate(&self) -> Result<(), String> {
         if self.adults.is_empty() {

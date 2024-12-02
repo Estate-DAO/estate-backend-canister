@@ -1,17 +1,22 @@
 {
-    "canisters": {
-      "estate_backend": {
-        "candid": "src/backend/can.did",
-        "package": "estate_backend",
-        "type": "rust"
-      }
-    },
-    "defaults": {
-      "build": {
-        "args": "",
-        "packtool": ""
-      }
-    },
-    "output_env_file": ".env",
-    "version": 1
-  }
+  "canisters": {
+    "estate_backend": {
+      "candid": "src/backend/can.did",
+      "package": "estate_backend",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "ic": {
+      "url": "https://ic0.app"
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

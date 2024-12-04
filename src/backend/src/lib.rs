@@ -65,7 +65,7 @@ fn post_upgrade() {
 #[ic_cdk_macros::update]
 fn add_booking(email: String, booking: Booking) -> Result<String, String> {
     STATE.with(|state| {
-        state.borrow_mut().add_booking(&email, booking)
+        state.borrow_mut().add_booking_and_user(&email, booking)
     })
 }
 

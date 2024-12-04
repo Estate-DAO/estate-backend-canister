@@ -42,14 +42,15 @@ impl CanisterState {
     //     self.users.insert(email, profile);
     //     Ok(())
     // }
-
-    pub fn add_booking(&mut self, email: &str, booking: Booking) -> Result<String, String> {
-        let user_profile = self.users.get_mut(email)
-            .ok_or("User not found")?;
-        
-        user_profile.add_booking(booking);
+    pub fn add_booking_and_user(&mut self, email: &str, booking: Booking) -> Result<String, String> {
+        let user_profile = self.users.entry(email.to_string())
+        .or_insert_with(|| UserInfoAndBookings::default());
+    
+        let user_result  = user_profile.add_booking(booking);
+        println!("add_booking_and_user - {user_result:?}");
         Ok("Success".into())
     }
+
 
     pub fn get_user_profile(&self, email: &str) -> Option<&UserInfoAndBookings> {
         self.users.get(email)

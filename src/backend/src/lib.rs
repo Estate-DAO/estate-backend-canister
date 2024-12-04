@@ -126,15 +126,15 @@ fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
 // }
 
 
-// #[ic_cdk_macros::query]
-// fn greet(GreetParams(name): GreetParams) -> GreetResponse {
-//     let caller = ic_cdk::caller();
+#[ic_cdk_macros::query]
+fn greet(GreetParams(name): GreetParams) -> GreetResponse {
+    let caller = ic_cdk::caller();
     
-//     print!("greet - {caller:?}");
+    print!("greet - {caller:?}");
 
-//     let resp_strng = format!("Hello, {}!", name);
-//     GreetResponse(resp_strng)
-// }
+    let resp_strng = format!("Hello, {}!", name);
+    GreetResponse(resp_strng)
+}
 
 
 ic_cdk_macros::export_candid!();

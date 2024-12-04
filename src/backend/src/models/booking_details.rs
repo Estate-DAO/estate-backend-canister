@@ -127,6 +127,8 @@ pub struct RoomDetails {
 pub struct HotelDetails {
     pub hotel_name: String,
     pub hotel_code: String,
+    pub hotel_image: String,
+    pub hotel_location: String,
 }
 
 #[derive(CandidType, Clone, Debug, PartialEq, Serialize, Deserialize)]

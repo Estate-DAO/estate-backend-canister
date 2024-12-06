@@ -1,15 +1,15 @@
 use std::collections::BTreeMap;
 
+use crate::Booking;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
-use crate:: Booking;
 
 use super::BookingId;
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct UserInfoAndBookings {
     pub primary_user: AdultDetail,
-    pub bookings: BTreeMap<BookingId,Booking>
+    pub bookings: BTreeMap<BookingId, Booking>,
 }
 
 impl UserInfoAndBookings {
@@ -28,7 +28,7 @@ impl UserInfoAndBookings {
     pub fn get_contact_info(&self) -> Option<(String, String)> {
         match (&self.primary_user.email, &self.primary_user.phone) {
             (Some(email), Some(phone)) => Some((email.clone(), phone.clone())),
-            _ => None
+            _ => None,
         }
     }
 
@@ -60,7 +60,7 @@ impl UserInfoAndBookings {
 }
 
 // UserDetails scope
-#[derive(CandidType,Serialize,Deserialize,Default, Clone, Debug)]
+#[derive(CandidType, Serialize, Deserialize, Default, Clone, Debug)]
 pub struct UserDetails {
     pub adults: Vec<AdultDetail>,
     pub children: Vec<ChildDetail>,
@@ -84,12 +84,12 @@ impl UserDetails {
     // }
 
     pub fn get_primary_contact(&self) -> Option<(String, String)> {
-        self.adults.first().and_then(|adult| {
-            match (&adult.email, &adult.phone) {
+        self.adults
+            .first()
+            .and_then(|adult| match (&adult.email, &adult.phone) {
                 (Some(email), Some(phone)) => Some((email.clone(), phone.clone())),
-                _ => None
-            }
-        })
+                _ => None,
+            })
     }
 
     // pub fn total_guests(&self) -> usize {
@@ -114,7 +114,7 @@ impl UserDetails {
     }
 }
 
-#[derive(CandidType,Serialize,Deserialize,Default, Clone, Debug)]
+#[derive(CandidType, Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct AdultDetail {
     pub first_name: String,
     pub last_name: Option<String>,
@@ -122,7 +122,7 @@ pub struct AdultDetail {
     pub phone: Option<String>, // Only for first adult
 }
 
-#[derive(CandidType,Serialize,Deserialize,Default, Clone, Debug)]
+#[derive(CandidType, Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct ChildDetail {
     pub first_name: String,
     pub last_name: Option<String>,

@@ -1,6 +1,6 @@
-use std::collections::BTreeMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 mod payment_details;
 pub use payment_details::*;
@@ -14,26 +14,25 @@ pub use booking_details::*;
 mod greet;
 pub use greet::*;
 
-
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct CanisterState {
     // Map from email/phone watever to UserInfoAndBookings
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub users:
     //     ic_stable_structures::btreemap::BTreeMap<String,UserInfoAndBookings, Memory>,
-    pub users: BTreeMap<String, UserInfoAndBookings>
+    pub users: BTreeMap<String, UserInfoAndBookings>,
 }
 
 impl CanisterState {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     // pub fn register_user(&mut self, adult: AdultDetail) -> Result<(), String> {
     //     let email = adult.email.as_ref()
     //         .ok_or("Email required for registration")?
     //         .clone();
-            
+
     //     if self.users.contains_key(&email) {
     //         return Err("User already registered".into());
     //     }
@@ -42,15 +41,20 @@ impl CanisterState {
     //     self.users.insert(email, profile);
     //     Ok(())
     // }
-    pub fn add_booking_and_user(&mut self, email: &str, booking: Booking) -> Result<String, String> {
-        let user_profile = self.users.entry(email.to_string())
-        .or_insert_with(|| UserInfoAndBookings::default());
-    
-        let user_result  = user_profile.add_booking(booking);
+    pub fn add_booking_and_user(
+        &mut self,
+        email: &str,
+        booking: Booking,
+    ) -> Result<String, String> {
+        let user_profile = self
+            .users
+            .entry(email.to_string())
+            .or_insert_with(|| UserInfoAndBookings::default());
+
+        let user_result = user_profile.add_booking(booking);
         println!("add_booking_and_user - {user_result:?}");
         Ok("Success".into())
     }
-
 
     pub fn get_user_profile(&self, email: &str) -> Option<&UserInfoAndBookings> {
         self.users.get(email)
@@ -60,9 +64,17 @@ impl CanisterState {
         self.users.get(email).map(|profile| &profile.bookings)
     }
 
-    pub fn update_payment_status(&self, booking_id: BookingId, payment_status: BackendPaymentStatus) -> Result<Booking, String> {
+    pub fn update_payment_details(
+        &self,
+        booking_id: BookingId,
+        payment_details: PaymentDetails,
+    ) -> Result<Booking, String> {
+        // validation - booking_id MUST exist.
+
         // Find the booking by ID.
-        let booking = self.users.values()
+        let booking = self
+            .users
+            .values()
             .flat_map(|user| user.bookings.values())
             .find(|booking| booking.booking_id == booking_id)
             .cloned()
@@ -78,7 +90,7 @@ impl CanisterState {
     // pub fn update_booking(&mut self, email: &str, booking_id: &str, booking: Booking) -> Result<(), String> {
     //     let user_profile = self.users.get_mut(email)
     //         .ok_or("User not found")?;
-        
+
     //     let booking_index = user_profile.bookings.iter()
     //         .position(|b| b.booking_id == booking_id)
     //         .ok_or("Booking not found")?;
@@ -90,7 +102,7 @@ impl CanisterState {
     // pub fn cancel_booking(&mut self, email: &str, booking_id: &str) -> Result<(), String> {
     //     let user_profile = self.users.get_mut(email)
     //         .ok_or("User not found")?;
-        
+
     //     let booking_index = user_profile.bookings.iter()
     //         .position(|b| b.booking_id == booking_id)
     //         .ok_or("Booking not found")?;

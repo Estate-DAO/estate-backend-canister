@@ -6,20 +6,22 @@ use serde::{Deserialize, Serialize};
 pub type AppReference = String;
 pub type UserEmail = String;
 
-#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(
+    CandidType, Deserialize, Default, Serialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord,
+)]
 pub struct BookingId(AppReference, UserEmail);
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct Booking {
     pub booking_id: BookingId,
     pub guests: UserDetails,
-    
+
     /// status of booking
     pub book_room_status: Option<BookRoomResponse>,
-    
+
     /// user preferences for the hotel
     pub user_selected_hotel_room_details: HotelRoomDetails,
-    
+
     pub payment_details: PaymentDetails,
 }
 
@@ -61,30 +63,25 @@ impl Booking {
     }
 
     pub fn get_booking_status(&self) -> BookingStatus {
-        self
-            .book_room_status
+        self.book_room_status
             .as_ref()
             .map(|r| r.status.clone())
             .unwrap_or(BookingStatus::BookFailed)
     }
 
     pub fn get_requested_payment_amount(&self) -> f64 {
-        self.user_selected_hotel_room_details.requested_payment_amount 
+        self.user_selected_hotel_room_details
+            .requested_payment_amount
     }
 
     pub fn get_booking_summary(&self) -> String {
-        let hotel = &self
-            .user_selected_hotel_room_details
-            .hotel_details;
-        let date_range = &self
-            .user_selected_hotel_room_details
-            .date_range;
+        let hotel = &self.user_selected_hotel_room_details.hotel_details;
+        let date_range = &self.user_selected_hotel_room_details.date_range;
 
         format!(
             "{} at {} ({} nights) - {}",
             hotel.hotel_name,
-            self
-                .user_selected_hotel_room_details
+            self.user_selected_hotel_room_details
                 .destination
                 .as_ref()
                 .map(|d| d.city.as_str())
@@ -129,6 +126,8 @@ pub struct HotelDetails {
     pub hotel_code: String,
     pub hotel_image: String,
     pub hotel_location: String,
+    pub block_room_id: String,
+    pub hotel_token: String,
 }
 
 #[derive(CandidType, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -211,7 +210,7 @@ pub struct BookingDetails {
 pub enum BookingStatus {
     #[default]
     BookFailed,
-    Confirmed
+    Confirmed,
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
@@ -227,9 +226,7 @@ pub struct BookingSummary {
 
 impl From<(&str, &Booking)> for BookingSummary {
     fn from((email, booking): (&str, &Booking)) -> Self {
-        let hotel = &booking
-            .user_selected_hotel_room_details
-            .hotel_details;
+        let hotel = &booking.user_selected_hotel_room_details.hotel_details;
         let destination = booking
             .user_selected_hotel_room_details
             .destination

@@ -61,6 +61,8 @@ fn post_upgrade() {
 ////////////////////////////
 
 #[ic_cdk_macros::update]
+// PRINCIPAL should be admin principal
+// is_controller
 fn add_booking(email: String, booking: Booking) -> Result<String, String> {
     STATE.with(|state| state.borrow_mut().add_booking_and_user(&email, booking))
 }
@@ -109,6 +111,18 @@ fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
             .borrow()
             .get_user_bookings(&email)
             .map(|bookings| bookings.values().cloned().collect())
+    })
+}
+
+#[ic_cdk_macros::update]
+fn update_book_room_response(
+    booking_id: BookingId,
+    book_room_response: BookRoomResponse,
+) -> Result<(), String> {
+    STATE.with(|state| {
+        state
+            .borrow_mut()
+            .update_book_room_response(booking_id, book_room_response)
     })
 }
 

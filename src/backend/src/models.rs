@@ -21,6 +21,7 @@ pub struct CanisterState {
     // pub users:
     //     ic_stable_structures::btreemap::BTreeMap<String,UserInfoAndBookings, Memory>,
     pub users: BTreeMap<String, UserInfoAndBookings>,
+    // pub admin_principal: Vec<Principal>
 }
 
 impl CanisterState {
@@ -119,4 +120,30 @@ impl CanisterState {
     //         })
     //         .collect()
     // }
+
+    pub fn update_book_room_response(
+        &mut self,
+        booking_id: BookingId,
+        book_room_response: BookRoomResponse,
+    ) -> Result<(), String> {
+        let user_email = booking_id.get_user_email();
+        let result = self
+            .users
+            .get_mut(user_email)
+            .ok_or_else(|| format!("User with email '{}' not found", user_email))
+            .and_then(|user| {
+                user.bookings
+                    .get_mut(&booking_id)
+                    .map(|booking| {
+                        booking.book_room_status = Some(book_room_response);
+                    })
+                    .ok_or_else(|| {
+                        format!(
+                            "Booking with app_refrence '{}' not found",
+                            booking_id.get_app_reference()
+                        )
+                    })
+            });
+        result.map(|_| ())
+    }
 }

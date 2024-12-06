@@ -11,6 +11,16 @@ pub type UserEmail = String;
 )]
 pub struct BookingId(AppReference, UserEmail);
 
+impl BookingId {
+    pub fn get_app_reference(&self) -> &str {
+        &self.0
+    }
+
+    pub fn get_user_email(&self) -> &str {
+        &self.1
+    }
+}
+
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct Booking {
     pub booking_id: BookingId,
@@ -189,7 +199,6 @@ impl SelectedDateRange {
 }
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
-
 pub struct BookRoomResponse {
     pub status: BookingStatus,
     pub message: Option<String>,
@@ -197,7 +206,6 @@ pub struct BookRoomResponse {
 }
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
-
 pub struct BookingDetails {
     pub booking_id: BookingId,
     pub booking_ref_no: String,

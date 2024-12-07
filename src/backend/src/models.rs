@@ -71,16 +71,39 @@ impl CanisterState {
         payment_details: PaymentDetails,
     ) -> Result<Booking, String> {
         // validation - booking_id MUST exist.
+        let cloned_payment_api_resp = payment_details.payment_api_response.clone();
 
         // Find the booking by ID.
-        let booking = self
+        let mut booking = self
             .users
             .values()
             .flat_map(|user| user.bookings.values())
             .find(|booking| booking.booking_id == booking_id)
             .cloned()
-            .ok_or("Booking not found".to_string())?; // Return error if not found
+            .ok_or("Booking not found".to_string())?;
 
+        booking.payment_details = payment_details;
+
+        let status = cloned_payment_api_resp.payment_status;
+
+        let payment_status = match status.as_str() {
+            "finished" => {
+                let trans_ref = format!("{:?} - COMPLETED", cloned_payment_api_resp.payment_id);
+                BackendPaymentStatus::Paid(trans_ref)
+            },
+            "cancelled" => {
+                let trans_ref = format!("{:?} - CANCELLED", cloned_payment_api_resp.payment_id);
+                BackendPaymentStatus::Unpaid(Some(trans_ref))
+            },
+            _ => {
+                let trans_ref = format!("{:?} - PENDING", cloned_payment_api_resp.payment_id);
+                BackendPaymentStatus::Unpaid(Some(trans_ref))
+            }
+        };
+
+        booking.payment_details.payment_status = payment_status;
+
+        println!("{:?}", booking);
         Ok(booking)
     }
     // pub fn get_booking(&self, email: &str, booking_id: &str) -> Option<&Booking> {

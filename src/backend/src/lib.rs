@@ -117,7 +117,7 @@ fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
 #[ic_cdk_macros::update]
 fn update_book_room_response(
     booking_id: BookingId,
-    book_room_response: BookRoomResponse,
+    book_room_response: BEBookRoomResponse,
 ) -> Result<(), String> {
     STATE.with(|state| {
         state

@@ -90,11 +90,11 @@ impl CanisterState {
             "finished" => {
                 let trans_ref = format!("{:?} - COMPLETED", cloned_payment_api_resp.payment_id);
                 BackendPaymentStatus::Paid(trans_ref)
-            },
+            }
             "cancelled" => {
                 let trans_ref = format!("{:?} - CANCELLED", cloned_payment_api_resp.payment_id);
                 BackendPaymentStatus::Unpaid(Some(trans_ref))
-            },
+            }
             _ => {
                 let trans_ref = format!("{:?} - PENDING", cloned_payment_api_resp.payment_id);
                 BackendPaymentStatus::Unpaid(Some(trans_ref))
@@ -147,7 +147,7 @@ impl CanisterState {
     pub fn update_book_room_response(
         &mut self,
         booking_id: BookingId,
-        book_room_response: BookRoomResponse,
+        book_room_response: BEBookRoomResponse,
     ) -> Result<(), String> {
         let user_email = booking_id.get_user_email();
         let result = self

@@ -27,7 +27,7 @@ pub struct Booking {
     pub guests: UserDetails,
 
     /// status of booking
-    pub book_room_status: Option<BookRoomResponse>,
+    pub book_room_status: Option<BEBookRoomResponse>,
 
     /// user preferences for the hotel
     pub user_selected_hotel_room_details: HotelRoomDetails,
@@ -40,7 +40,7 @@ impl Booking {
         booking_id: BookingId,
         guests: UserDetails,
         // booking_details: UserBookingPreferences,
-        book_room_status: Option<BookRoomResponse>,
+        book_room_status: Option<BEBookRoomResponse>,
         user_selected_hotel_room_details: HotelRoomDetails,
 
         payment_details: PaymentDetails,
@@ -75,7 +75,7 @@ impl Booking {
     pub fn get_booking_status(&self) -> BookingStatus {
         self.book_room_status
             .as_ref()
-            .map(|r| r.status.clone())
+            .map(|r| r.commit_booking.booking_status.clone())
             .unwrap_or(BookingStatus::BookFailed)
     }
 
@@ -199,13 +199,13 @@ impl SelectedDateRange {
 }
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
-pub struct BookRoomResponse {
-    pub status: BookingStatus,
-    pub message: Option<String>,
-    pub commit_booking: Vec<BookingDetails>,
+pub struct BEBookRoomResponse {
+    pub status: String,
+    pub message: String,
+    pub commit_booking: BookingDetails,
 }
 
-#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
+#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct BookingDetails {
     pub booking_id: BookingId,
     pub booking_ref_no: String,
@@ -213,8 +213,8 @@ pub struct BookingDetails {
     pub booking_status: BookingStatus,
 }
 
-/// todo: shall we use a string for telling the details of why booking failed / or confirmed with some sort of transaction_id?
-#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
+// /// todo: shall we use a string for telling the details of why booking failed / or confirmed with some sort of transaction_id?
+#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug)]
 pub enum BookingStatus {
     #[default]
     BookFailed,
@@ -252,11 +252,7 @@ impl From<(&str, &Booking)> for BookingSummary {
                 .date_range
                 .no_of_nights(),
             payment_status: booking.payment_details.get_status_display(),
-            booking_status: booking
-                .book_room_status
-                .as_ref()
-                .map(|r| r.status.clone())
-                .unwrap_or_default(),
+            booking_status: booking.get_booking_status(),
         }
     }
 }

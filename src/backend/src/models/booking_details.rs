@@ -3,6 +3,8 @@ use candid::{CandidType, Principal};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
+use super::BackendPaymentStatus;
+
 pub type AppReference = String;
 pub type UserEmail = String;
 
@@ -99,6 +101,10 @@ impl Booking {
             date_range.no_of_nights(),
             self.payment_details.get_status_display()
         )
+    }
+
+    pub fn update_payment_status(&mut self, new_status: BackendPaymentStatus) {
+        self.payment_details.payment_status = new_status;
     }
 
     pub fn is_confirmed(&self) -> bool {

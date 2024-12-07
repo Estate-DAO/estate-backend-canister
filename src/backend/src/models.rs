@@ -100,8 +100,10 @@ impl CanisterState {
                 BackendPaymentStatus::Unpaid(Some(trans_ref))
             }
         };
+        let pay_stat_c = payment_status.clone();
 
-        booking.payment_details.payment_status = payment_status;
+        booking.update_payment_status(payment_status);
+        booking.payment_details.payment_status = pay_stat_c;
 
         println!("{:?}", booking);
         Ok(booking)

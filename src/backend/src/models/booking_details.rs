@@ -11,15 +11,15 @@ pub type UserEmail = String;
 #[derive(
     CandidType, Deserialize, Default, Serialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord,
 )]
-pub struct BookingId(AppReference, UserEmail);
+pub struct BookingId{app_ref: AppReference, email: UserEmail}
 
 impl BookingId {
     pub fn get_app_reference(&self) -> &str {
-        &self.0
+        &self.app_ref
     }
 
     pub fn get_user_email(&self) -> &str {
-        &self.1
+        &self.email
     }
 }
 

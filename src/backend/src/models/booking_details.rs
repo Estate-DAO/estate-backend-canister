@@ -74,11 +74,18 @@ impl Booking {
         Ok(())
     }
 
-    pub fn get_booking_status(&self) -> BookingStatus {
+    pub fn get_booking_status(&self) -> String {
         self.book_room_status
             .as_ref()
             .map(|r| r.commit_booking.booking_status.clone())
-            .unwrap_or(BookingStatus::BookFailed)
+            .unwrap_or("BookFailed".into())
+    }
+
+    pub fn get_booking_api_status(&self) -> BookingStatus {
+        self.book_room_status
+            .as_ref()
+            .map(|r| r.commit_booking.api_status.clone())
+            .unwrap_or( BookingStatus::BookFailed )
     }
 
     pub fn get_requested_payment_amount(&self) -> f64 {
@@ -107,9 +114,9 @@ impl Booking {
         self.payment_details.payment_status = new_status;
     }
 
-    pub fn is_confirmed(&self) -> bool {
-        matches!(self.get_booking_status(), BookingStatus::Confirmed)
-    }
+    // pub fn is_confirmed(&self) -> bool {
+    //     // matches!(self.get_booking_status(), BookingStatus::Confirmed)
+    // }
 }
 
 // #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
@@ -214,9 +221,12 @@ pub struct BEBookRoomResponse {
 #[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct BookingDetails {
     pub booking_id: BookingId,
+    /// given by Travelomatrix
+    pub travelomatrix_id : String, 
     pub booking_ref_no: String,
     pub confirmation_no: String,
-    pub booking_status: BookingStatus,
+    pub api_status: BookingStatus,
+    pub booking_status: String,
 }
 
 // /// todo: shall we use a string for telling the details of why booking failed / or confirmed with some sort of transaction_id?
@@ -235,7 +245,7 @@ pub struct BookingSummary {
     pub destination: String,
     pub nights: u32,
     pub payment_status: String,
-    pub booking_status: BookingStatus,
+    pub booking_status: String,
 }
 
 impl From<(&str, &Booking)> for BookingSummary {

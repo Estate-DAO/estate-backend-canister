@@ -150,7 +150,8 @@ impl CanisterState {
         &mut self,
         booking_id: BookingId,
         book_room_response: BEBookRoomResponse,
-    ) -> Result<(), String> {
+    ) -> Result<String, String> {
+    // ) -> Result<BEBookRoomResponse, String> {
         let user_email = booking_id.get_user_email();
         let result = self
             .users
@@ -160,15 +161,16 @@ impl CanisterState {
                 user.bookings
                     .get_mut(&booking_id)
                     .map(|booking| {
-                        booking.book_room_status = Some(book_room_response);
+                        booking.book_room_status = Some(book_room_response.clone());
                     })
                     .ok_or_else(|| {
                         format!(
                             "Booking with app_refrence '{}' not found",
                             booking_id.get_app_reference()
                         )
-                    })
-            });
-        result.map(|_| ())
+                    })?;
+            Ok("Success")
+            })?;
+        Ok(result.into())
     }
 }

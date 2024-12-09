@@ -118,7 +118,7 @@ fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
 fn update_book_room_response(
     booking_id: BookingId,
     book_room_response: BEBookRoomResponse,
-) -> Result<(), String> {
+) -> Result<String, String> {
     STATE.with(|state| {
         state
             .borrow_mut()

@@ -25,3 +25,7 @@ dist/
 .env
 
 quill
+dontcommit.md
+
+*.pem 
+*.aider*

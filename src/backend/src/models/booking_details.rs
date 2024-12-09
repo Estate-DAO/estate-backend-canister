@@ -1,31 +1,60 @@
-use std::collections::BTreeMap;
-use candid::{CandidType, Principal};
-use serde::{Deserialize, Serialize};
-use chrono::NaiveDate;
 use crate::{PaymentDetails, UserDetails};
+use candid::{CandidType, Principal};
+use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
+
+use super::BackendPaymentStatus;
+
+pub type AppReference = String;
+pub type UserEmail = String;
+
+#[derive(
+    CandidType, Deserialize, Default, Serialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord,
+)]
+pub struct BookingId{app_reference: AppReference, email: UserEmail}
+
+impl BookingId {
+    pub fn get_app_reference(&self) -> &str {
+        &self.app_reference
+    }
+
+    pub fn get_user_email(&self) -> &str {
+        &self.email
+    }
+}
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct Booking {
-    pub booking_id: String,
+    pub booking_id: BookingId,
     pub guests: UserDetails,
-    pub booking_details: UserBookingDetails,
+
+    /// status of booking
+    pub book_room_status: Option<BEBookRoomResponse>,
+
+    /// user preferences for the hotel
+    pub user_selected_hotel_room_details: HotelRoomDetails,
+
     pub payment_details: PaymentDetails,
 }
 
 impl Booking {
     pub fn new(
-        booking_id: String,
+        booking_id: BookingId,
         guests: UserDetails,
-        booking_details: UserBookingDetails,
+        // booking_details: UserBookingPreferences,
+        book_room_status: Option<BEBookRoomResponse>,
+        user_selected_hotel_room_details: HotelRoomDetails,
+
         payment_details: PaymentDetails,
     ) -> Result<Self, String> {
         let booking = Self {
             booking_id,
             guests,
-            booking_details,
+            book_room_status,
+            user_selected_hotel_room_details,
             payment_details,
         };
-        
+
         booking.validate()?;
         Ok(booking)
     }
@@ -45,26 +74,34 @@ impl Booking {
         Ok(())
     }
 
-    pub fn get_booking_status(&self) -> BookingStatus {
-        self.booking_details
-            .book_room_response
+    pub fn get_booking_status(&self) -> String {
+        self.book_room_status
             .as_ref()
-            .map(|r| r.status.clone())
-            .unwrap_or(BookingStatus::BookFailed)
+            .map(|r| r.commit_booking.booking_status.clone())
+            .unwrap_or("BookFailed".into())
     }
 
-    pub fn get_total_amount(&self) -> f64 {
-        self.booking_details.user_selected_hotel_room_details.requested_payment_amount
+    pub fn get_booking_api_status(&self) -> BookingStatus {
+        self.book_room_status
+            .as_ref()
+            .map(|r| r.commit_booking.api_status.clone())
+            .unwrap_or( BookingStatus::BookFailed )
+    }
+
+    pub fn get_requested_payment_amount(&self) -> f64 {
+        self.user_selected_hotel_room_details
+            .requested_payment_amount
     }
 
     pub fn get_booking_summary(&self) -> String {
-        let hotel = &self.booking_details.user_selected_hotel_room_details.hotel_details;
-        let date_range = &self.booking_details.user_selected_hotel_room_details.date_range;
-        
+        let hotel = &self.user_selected_hotel_room_details.hotel_details;
+        let date_range = &self.user_selected_hotel_room_details.date_range;
+
         format!(
             "{} at {} ({} nights) - {}",
             hotel.hotel_name,
-            self.booking_details.user_selected_hotel_room_details.destination
+            self.user_selected_hotel_room_details
+                .destination
                 .as_ref()
                 .map(|d| d.city.as_str())
                 .unwrap_or("Unknown"),
@@ -73,39 +110,47 @@ impl Booking {
         )
     }
 
-    pub fn is_confirmed(&self) -> bool {
-        matches!(self.get_booking_status(), BookingStatus::Confirmed)
+    pub fn update_payment_status(&mut self, new_status: BackendPaymentStatus) {
+        self.payment_details.payment_status = new_status;
     }
+
+    // pub fn is_confirmed(&self) -> bool {
+    //     // matches!(self.get_booking_status(), BookingStatus::Confirmed)
+    // }
 }
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct UserBookingDetails{
-    pub book_room_response: Option<BookRoomResponse>,
-    pub user_selected_hotel_room_details: HotelRoomDetails
-}
+// #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
+// pub struct UserBookingPreferencesAndBookingStatus {
+//     pub book_room_response: Option<BookRoomResponse>,
+//     pub user_selected_hotel_room_details: HotelRoomDetails,
+// }
 
 // HotelRoomDetails scope
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct HotelRoomDetails{
+pub struct HotelRoomDetails {
     pub hotel_details: HotelDetails,
     pub date_range: SelectedDateRange,
     pub destination: Option<Destination>,
     pub room_details: Vec<RoomDetails>,
     /// amount shown on block_room
-    pub requested_payment_amount: f64
+    pub requested_payment_amount: f64,
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct RoomDetails{
+pub struct RoomDetails {
     pub room_type_name: String,
     pub room_unique_id: String,
-    pub room_price: f32
+    pub room_price: f32,
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
 pub struct HotelDetails {
     pub hotel_name: String,
     pub hotel_code: String,
+    pub hotel_image: String,
+    pub hotel_location: String,
+    pub block_room_id: String,
+    pub hotel_token: String,
 }
 
 #[derive(CandidType, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -162,69 +207,68 @@ impl SelectedDateRange {
                 .unwrap_or_default()
         };
 
-        format!("{} - {}",
-            format_date(self.start),
-            format_date(self.end)
-        )
+        format!("{} - {}", format_date(self.start), format_date(self.end))
     }
-    
 }
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
-
-pub struct BookRoomResponse {
-    pub status: BookingStatus,
-    pub message: Option<String>,
-    pub commit_booking: Vec<BookingDetails>,
+pub struct BEBookRoomResponse {
+    pub status: String,
+    pub message: String,
+    pub commit_booking: BookingDetails,
 }
 
-#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
-
+#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct BookingDetails {
-    pub booking_id: String,
+    pub booking_id: BookingId,
+    /// given by Travelomatrix
+    pub travelomatrix_id : String, 
     pub booking_ref_no: String,
     pub confirmation_no: String,
-    pub booking_status: BookingStatus,
+    pub api_status: BookingStatus,
+    pub booking_status: String,
 }
 
-/// todo: shall we use a string for telling the details of why booking failed / or confirmed with some sort of transaction_id?
-#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
+// /// todo: shall we use a string for telling the details of why booking failed / or confirmed with some sort of transaction_id?
+#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug)]
 pub enum BookingStatus {
     #[default]
-    BookFailed = 0,
-    Confirmed = 1,
+    BookFailed,
+    Confirmed,
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct BookingSummary {
-    pub booking_id: String,
+    pub booking_id: BookingId,
     pub user_email: String,
     pub hotel_name: String,
     pub destination: String,
     pub nights: u32,
     pub payment_status: String,
-    pub booking_status: BookingStatus,
+    pub booking_status: String,
 }
 
 impl From<(&str, &Booking)> for BookingSummary {
     fn from((email, booking): (&str, &Booking)) -> Self {
-        let hotel = &booking.booking_details.user_selected_hotel_room_details.hotel_details;
-        let destination = booking.booking_details.user_selected_hotel_room_details
-            .destination.as_ref()
+        let hotel = &booking.user_selected_hotel_room_details.hotel_details;
+        let destination = booking
+            .user_selected_hotel_room_details
+            .destination
+            .as_ref()
             .map(|d| d.city.clone())
             .unwrap_or_default();
-        
+
         BookingSummary {
             booking_id: booking.booking_id.clone(),
             user_email: email.to_string(),
             hotel_name: hotel.hotel_name.clone(),
             destination,
-            nights: booking.booking_details.user_selected_hotel_room_details.date_range.no_of_nights(),
+            nights: booking
+                .user_selected_hotel_room_details
+                .date_range
+                .no_of_nights(),
             payment_status: booking.payment_details.get_status_display(),
-            booking_status: booking.booking_details.book_room_response
-                .as_ref()
-                .map(|r| r.status.clone())
-                .unwrap_or_default(),
+            booking_status: booking.get_booking_status(),
         }
     }
 }

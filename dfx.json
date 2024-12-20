@@ -3,12 +3,7 @@
     "estate_backend": {
       "candid": "src/backend/can.did",
       "package": "estate_backend",
-      "type": "rust",
-      "remote": {
-        "id": {
-          "ic": "4qrkh-bqaaa-aaaai-aqkda-cai"
-        }
-    }
+      "type": "rust"
   }
 },
   "defaults": {

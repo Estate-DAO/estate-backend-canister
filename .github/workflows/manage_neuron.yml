@@ -73,6 +73,8 @@ jobs:
           touch actions_identity.pem
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
       
-          ./quill --pem-file actions_identity.pem  sns configure-dissolve-delay ${{env.NEURON_ID}} --additional-dissolve-delay-seconds ${{env.DISSOLVE_DELAY_SECONDS}}  --canister-ids-file ./sns_canister_ids.json | tee manage_neuron.json
+          ./quill --pem-file actions_identity.pem  sns configure-dissolve-delay ${{env.NEURON_ID}} --additional-dissolve-delay-seconds ${{env.DISSOLVE_DELAY_SECONDS}}  --canister-ids-file ./sns_canister_ids.json | tee manage_neuron_req.json
+
+          ./quill send manage_neuron_req.json --yes  | tee manage_neuron_response.log
 
           sleep 10

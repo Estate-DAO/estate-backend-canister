@@ -20,15 +20,28 @@ jobs:
     permissions:
       packages: read
       contents: write
-
+    
+    env:
+      DISSOLVE_SECONDS: 16502400 # 191 days of dissolve delay
+    
     steps:
 
-
       - name: Checkout repo and submodules
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
-      
+    
+      - name: Rust Setup
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "nightly-2024-09-23"
+          targets: "x86_64-unknown-linux-musl"
+          components: ""
+    
+      - uses: cargo-bins/cargo-binstall@main
+      - name: idl2json setup
+        run: cargo binstall idl2json_cli --no-confirm
+
       - name: Install quill from GitHub Releases
         run: |
           curl -LJO https://github.com/dfinity/quill/releases/download/v0.4.2/quill-linux-x86_64-musl
@@ -46,4 +59,18 @@ jobs:
           ./quill send stake_request.json --yes  | tee stake_response.log
           
           # Wait for confirmation
+          sleep 10
+
+      - name: Extract NeuronID
+        run: |
+          NEURON_ID=$(cat stake_response.log | idl2json --bytes-as hex | jq -r '.command[0].ClaimOrRefresh.refreshed_neuron_id[0].id')
+          echo "NEURON_ID=$NEURON_ID" >> $GITHUB_ENV
+          echo "$NEURON_ID"
+      
+      - name: Add dissolve delay + other params
+        run: | 
+          quill --pem-file  actions_identity.pem neuron-manage ${{env.NEURON_ID}} --additional-dissolve-delay-seconds ${{env.DISSOLVE_DELAY_SECONDS}} | tee manage_neuron.json
+          # Send the request
+          ./quill send manage_neuron.json --yes  | tee manage_neuron_response.log
+
           sleep 10

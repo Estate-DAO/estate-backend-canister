@@ -22,7 +22,7 @@ jobs:
     
     env:
       NEURON_ID: 8f9a87010a8d578a40be66eb7101aa4fd2d945fd44ff070c71771e53be2ff2ac
-      DISSOLVE_SECONDS: 16502400 # 191 days of dissolve delay
+      DISSOLVE_DELAY_SECONDS: 16502400 # 191 days of dissolve delay
     
     steps:
 

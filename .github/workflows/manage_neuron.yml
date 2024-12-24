@@ -8,7 +8,6 @@ on:
           default: 'Manual deployment'
           type: string
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -74,7 +73,7 @@ jobs:
           touch actions_identity.pem
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
       
-          quill --pem-file  actions_identity.pem neuron-manage ${{env.NEURON_ID}} --additional-dissolve-delay-seconds ${{env.DISSOLVE_DELAY_SECONDS}} | tee manage_neuron.json
+          ./quill --pem-file  actions_identity.pem neuron-manage ${{env.NEURON_ID}} --additional-dissolve-delay-seconds ${{env.DISSOLVE_DELAY_SECONDS}} | tee manage_neuron.json
           # Send the request
           ./quill send manage_neuron.json --yes  | tee manage_neuron_response.log
 

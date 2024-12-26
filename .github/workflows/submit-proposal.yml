@@ -1,0 +1,75 @@
+name: Release and submit proposal
+on:
+  push:
+    tags:
+      - 'v*'
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Publish canister artifacts and send upgrade proposals
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: write
+    env:
+      NEURON_ID: 8f9a87010a8d578a40be66eb7101aa4fd2d945fd44ff070c71771e53be2ff2ac
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Install DFX
+        run: |
+          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+     
+      - name: Cache rust dependencies, build output and DFX build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            .dfx/cache/
+          key: rust-test-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Import DFX identity
+        run: |
+          touch actions_identity.pem
+          echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
+          dfx identity import --storage-mode=plaintext actions actions_identity.pem
+          dfx identity use actions
+
+      - name: Build estate_backend canister
+        run: |
+          dfx build estate_backend --network=ic
+          hash=$(sha256sum < .dfx/ic/canisters/estate_backend/estate_backend.wasm.gz)
+          echo "Module Hash: ${hash}"
+      
+      - name: Submit upgrade proposal for estate_backend canister
+        run: |
+          CANISTER_NAME=estate_backend
+          export CANISTER_ID=$( dfx canister id ${CANISTER_NAME} --network=ic)
+          mkdir -p "proposals/${CANISTER_NAME}"
+          touch "proposals/${CANISTER_NAME}/upgrade.json"
+          ./quill sns \
+              --canister-ids-file ./sns_canister_ids.json \
+              --pem-file actions_identity.pem \
+              make-upgrade-canister-proposal \
+              --title "Upgrade ${CANISTER_NAME} Canisters" \
+              --summary "
+              # Upgrade ${CANISTER_NAME}
+
+            ${{ steps.changelog.outputs.changes }}
+            " \
+            --url 'https://estatedao.org' \
+            --target-canister-id $CANISTER_ID \
+            --wasm-path .dfx/ic/canisters/${CANISTER_NAME}/${CANISTER_NAME}.wasm.gz \
+            --canister-upgrade-arg "(record {version=\"${{ github.ref_name }}\"})" \
+            $NEURON_ID > "proposals/${CANISTER_NAME}/upgrade.json"
+          ./quill send proposals/${CANISTER_NAME}/upgrade.json --yes

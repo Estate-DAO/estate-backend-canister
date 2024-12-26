@@ -21,10 +21,14 @@ jobs:
     
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Install DFX
-        run: |
-          sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+        uses: actions/checkout@v4
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with: 
+          dfx-version: "0.24.3"
+
+      - name: Confirm successful installation
+        run: dfx --version
      
       - name: Cache rust dependencies, build output and DFX build cache
         uses: actions/cache@v3

@@ -1,7 +1,9 @@
 mod models;
-use candid::CandidType;
 pub use models::*;
+mod controller;
+pub use controller::is_controller;
 
+use candid::CandidType;
 use ic_cdk::{post_upgrade, pre_upgrade, print, storage};
 use std::cell::RefCell;
 
@@ -9,23 +11,23 @@ thread_local! {
     static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
 }
 
-#[ic_cdk_macros::init]
-fn init() {
-    init_hook();
-}
+// #[ic_cdk_macros::init]
+// fn init() {
+//     init_hook();
+// }
 
-fn init_hook() {
-    STATE.with(|state| {
-        let mut state = state.borrow_mut();
+// fn init_hook() {
+//     STATE.with(|state| {
+//         let mut state = state.borrow_mut();
 
-        if state.users.is_empty() {
-            // Insert a default user if the map is empty
-            state
-                .users
-                .insert("a@b.com".to_string(), UserInfoAndBookings::default());
-        }
-    });
-}
+//         if state.users.is_empty() {
+//             // Insert a default user if the map is empty
+//             state
+//                 .users
+//                 .insert("a@b.com".to_string(), UserInfoAndBookings::default());
+//         }
+//     });
+// }
 
 ////////////////////////////
 // upgrade API
@@ -46,7 +48,7 @@ fn post_upgrade() {
             STATE.with(|state| {
                 *state.borrow_mut() = restored_state;
             });
-            init_hook();
+            // init_hook();
         }
         Err(err) => {
             ic_cdk::trap(&format!("Failed to restore stable state: {}", err));
@@ -60,21 +62,19 @@ fn post_upgrade() {
 // CREATE / UPDATE
 ////////////////////////////
 
-#[ic_cdk_macros::update]
-// PRINCIPAL should be admin principal
-// is_controller
+#[ic_cdk_macros::update(guard = "is_controller")]
 fn add_booking(email: String, booking: Booking) -> Result<String, String> {
     STATE.with(|state| state.borrow_mut().add_booking_and_user(&email, booking))
 }
 
-// #[ic_cdk_macros::update]
+// #[ic_cdk_macros::update(guard = "is_controller")]
 // fn update_book_room_response(booking_id: BookingId, book_room_response: BookRoomResponse) -> Result<(), String> {
 //     STATE.with(|state| {
 //         state.borrow_mut().update_book_room_response(booking_id, book_room_response)
 //     })
 // }
 
-#[ic_cdk_macros::update]
+#[ic_cdk_macros::update(guard = "is_controller")]
 fn update_payment_details(
     booking_id: BookingId,
     payment_details: PaymentDetails,
@@ -86,14 +86,14 @@ fn update_payment_details(
     })
 }
 
-// #[ic_cdk_macros::update]
+// #[ic_cdk_macros::update(guard = "is_controller")]
 // fn update_booking(email: String, booking_id: String, booking: Booking) -> Result<(), String> {
 //     STATE.with(|state| {
 //         state.borrow_mut().update_booking(&email, &booking_id, booking)
 //     })
 // }
 
-// #[ic_cdk_macros::update]
+// #[ic_cdk_macros::update(guard = "is_controller")]
 // fn cancel_booking(email: String, booking_id: String) -> Result<(), String> {
 //     STATE.with(|state| {
 //         state.borrow_mut().cancel_booking(&email, &booking_id)
@@ -114,7 +114,7 @@ fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
     })
 }
 
-#[ic_cdk_macros::update]
+#[ic_cdk_macros::update(guard = "is_controller")]
 fn update_book_room_response(
     booking_id: BookingId,
     book_room_response: BEBookRoomResponse,

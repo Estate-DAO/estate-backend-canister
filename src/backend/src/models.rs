@@ -151,7 +151,7 @@ impl CanisterState {
         booking_id: BookingId,
         book_room_response: BEBookRoomResponse,
     ) -> Result<String, String> {
-    // ) -> Result<BEBookRoomResponse, String> {
+        // ) -> Result<BEBookRoomResponse, String> {
         let user_email = booking_id.get_user_email();
         let result = self
             .users
@@ -169,7 +169,7 @@ impl CanisterState {
                             booking_id.get_app_reference()
                         )
                     })?;
-            Ok("Success")
+                Ok("Success")
             })?;
         Ok(result.into())
     }

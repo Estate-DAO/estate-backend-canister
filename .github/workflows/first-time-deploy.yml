@@ -50,6 +50,8 @@ jobs:
           echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
           dfx identity import --storage-mode=plaintext actions actions_identity.pem
           dfx identity use actions
+          dfx identity get-principal --network=ic | tee principal.txt
+
 
       - name: Build estate_backend canister
         run: |

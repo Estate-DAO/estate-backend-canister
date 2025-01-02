@@ -11,7 +11,10 @@ pub type UserEmail = String;
 #[derive(
     CandidType, Deserialize, Default, Serialize, Clone, Debug, Eq, PartialEq, PartialOrd, Ord,
 )]
-pub struct BookingId{app_reference: AppReference, email: UserEmail}
+pub struct BookingId {
+    app_reference: AppReference,
+    email: UserEmail,
+}
 
 impl BookingId {
     pub fn get_app_reference(&self) -> &str {
@@ -85,7 +88,7 @@ impl Booking {
         self.book_room_status
             .as_ref()
             .map(|r| r.commit_booking.api_status.clone())
-            .unwrap_or( BookingStatus::BookFailed )
+            .unwrap_or(BookingStatus::BookFailed)
     }
 
     pub fn get_requested_payment_amount(&self) -> f64 {
@@ -222,7 +225,7 @@ pub struct BEBookRoomResponse {
 pub struct BookingDetails {
     pub booking_id: BookingId,
     /// given by Travelomatrix
-    pub travelomatrix_id : String, 
+    pub travelomatrix_id: String,
     pub booking_ref_no: String,
     pub confirmation_no: String,
     pub api_status: BookingStatus,

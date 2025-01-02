@@ -1,0 +1,58 @@
+name: first time deploy
+on:
+    workflow_dispatch:
+      inputs:
+        deploy_message:
+          description: 'Deployment message'
+          required: false
+          default: 'first-time-deploy canister'
+          type: string
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: first time deploy
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: write
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with: 
+          dfx-version: "0.24.3"
+
+      - name: Confirm successful installation
+        run: dfx --version
+     
+      - name: Cache rust dependencies, build output and DFX build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            .dfx/cache/
+          key: rust-test-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Import DFX identity
+        run: |
+          touch actions_identity.pem
+          echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
+          dfx identity import --storage-mode=plaintext actions actions_identity.pem
+          dfx identity use actions
+
+      - name: Build estate_backend canister
+        run: |
+          dfx deploy estate_backend --network=ic | tee response.log
+          cat response.log
+      

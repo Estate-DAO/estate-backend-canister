@@ -48,6 +48,10 @@ jobs:
             .dfx/cache/
           key: rust-test-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: copy prod canister ids json 
+        run: |
+          cp canister_ids_prod.json canister_ids.json
+      
       - name: Import DFX identity
         run: |
           touch actions_identity.pem

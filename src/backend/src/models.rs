@@ -21,8 +21,12 @@ pub struct CanisterState {
     // pub users:
     //     ic_stable_structures::btreemap::BTreeMap<String,UserInfoAndBookings, Memory>,
     pub users: BTreeMap<String, UserInfoAndBookings>,
+    // #[serde(default)]
+    pub controllers: Option<Vec<Principal>>,
+    // pub controllers: Vec<Principal>,
     // pub admin_principal: Vec<Principal>
 }
+
 
 impl CanisterState {
     pub fn new() -> Self {
@@ -42,6 +46,7 @@ impl CanisterState {
     //     self.users.insert(email, profile);
     //     Ok(())
     // }
+
     pub fn add_booking_and_user(
         &mut self,
         email: &str,

@@ -2,7 +2,7 @@ mod models;
 pub use models::*;
 mod controller;
 pub use controller::is_controller;
-
+use candid::Principal;
 use candid::CandidType;
 use ic_cdk::{post_upgrade, pre_upgrade, print, storage};
 use std::cell::RefCell;
@@ -33,6 +33,16 @@ thread_local! {
 // upgrade API
 ////////////////////////////
 
+/// Called just before the canister is upgraded.
+/// This is the last chance for the canister to save any state it wants to keep
+/// before the upgrade is applied.
+/// This function is not called if the upgrade fails.
+/// If this function traps, the upgrade will not be applied.
+/// If this function returns an error, the upgrade will not be applied.
+/// The state saved by this function is not guaranteed to be restored by the
+/// post_upgrade function of the new version of the canister.
+/// The state saved by this function is not guaranteed to be valid for the new
+/// version of the canister.
 #[pre_upgrade]
 fn pre_upgrade() {
     STATE.with(|state| {

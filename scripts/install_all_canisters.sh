@@ -7,19 +7,6 @@ usage() {
   exit 0;
 }
 
-skip_test=false
-
-while getopts "sih" arg; do
-  case $arg in
-    s)
-      skip_test=true
-      ;;
-    h)
-      usage
-      ;;
-  esac
-done
-
 CANISTER_NAME=estate_backend
 
 dfx canister create $CANISTER_NAME

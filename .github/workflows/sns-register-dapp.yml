@@ -50,20 +50,21 @@ jobs:
         run: |
           CANISTER_NAME=estate_backend
           export CANISTER_ID=$( dfx canister id ${CANISTER_NAME} --network=ic)
-          mkdir -p "proposals/${CANISTER_NAME}"
-          touch "proposals/${CANISTER_NAME}/upgrade.json"
-          ./quill sns \
-              --canister-ids-file ./sns_canister_ids.json \
-              --pem-file actions_identity.pem \
-              make-proposal \
-              --title "Add ${CANISTER_NAME} Canisters - ${CANISTER_ID} as Dapp to DAO" \
-              --summary "
-              # Add ${CANISTER_NAME} Canisters with ${CANISTER_ID}
+          
+          ./quill sns --canister-ids-file ./sns_canister_ids.json --pem-file actions_identity.pem make-proposal $NEURON_ID --proposal '(
+              record {
+                  title = "Register new dapp canisters";
+                  url = "https://estatedao.org";
+                  summary = "Proposal to register new dapp canister, with ID ${CANISTER_ID} to the SNS.";
+                  action = opt variant {
+                      RegisterDappCanisters = record {
 
-            ${{ steps.changelog.outputs.changes }}
-            " \
-            --url 'https://estatedao.org' \
-            action='''opt variant {RegisterDappCanisters = record {canister_ids=vec {principal\"$CANISTER_ID\"};};};})"''' \
-            $NEURON_ID > "proposals/${CANISTER_NAME}/upgrade.json"
-          ./quill send proposals/${CANISTER_NAME}/upgrade.json --yes
+                          canister_ids = vec  {principal "$CANISTER_ID"};
+
+                      };
+                  };
+              }
+          )'  > message.json
+
+          ./quill send message.json --yes
          

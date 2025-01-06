@@ -63,7 +63,7 @@ jobs:
             ${{ steps.changelog.outputs.changes }}
             " \
             --url 'https://estatedao.org' \
-            action=opt variant {RegisterDappCanisters = record {canister_ids=vec {principal\"$CANISTER_ID\"};};};})" \
+            action='''opt variant {RegisterDappCanisters = record {canister_ids=vec {principal\"$CANISTER_ID\"};};};})"''' \
             $NEURON_ID > "proposals/${CANISTER_NAME}/upgrade.json"
           ./quill send proposals/${CANISTER_NAME}/upgrade.json --yes
          

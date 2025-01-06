@@ -52,6 +52,9 @@ jobs:
           export CANISTER_ID=$( dfx canister id ${CANISTER_NAME} --network=ic)
           output=$(sed "s/CANISTER_ID/${CANISTER_ID}/g" <<< '(record {title = "Register new dapp canisters";url = "https://estatedao.org"; summary = "Proposal to register new dapp canister, with ID CANISTER_ID to the SNS"; action = opt variant { RegisterDappCanisters = record { canister_ids = vec { principal "CANISTER_ID" } } }})')
 
+          echo $output
+          echo "\n\n\n"
+          
           ./quill sns --canister-ids-file ./sns_canister_ids.json --pem-file actions_identity.pem make-proposal "$NEURON_ID" --proposal $output > message.json
 
           ./quill send message.json --yes

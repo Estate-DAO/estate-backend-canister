@@ -1,0 +1,69 @@
+name: SNS Register Dapp Canister
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_message:
+          description: 'register dapp'
+          required: false
+          default: 'dapp canister'
+          type: string
+
+jobs:
+  register-dapp:
+    runs-on: ubuntu-latest
+    env:
+      NEURON_ID: 8f9a87010a8d578a40be66eb7101aa4fd2d945fd44ff070c71771e53be2ff2ac
+    
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with: 
+          dfx-version: "0.24.3"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install quill from GitHub Releases
+        run: |
+          curl -LJO https://github.com/dfinity/quill/releases/download/v0.4.2/quill-linux-x86_64-musl
+          mv quill-linux-x86_64-musl quill
+          chmod +x quill
+
+      - name: copy prod canister ids json 
+        run: |
+          cp canister_ids_prod.json canister_ids.json
+      
+          
+      - name: Import DFX identity
+        run: |
+          touch actions_identity.pem
+          echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
+          dfx identity import --storage-mode=plaintext actions actions_identity.pem
+          dfx identity use actions
+
+         
+      - name: Submit estate dao proposal for estate_backend canister
+        run: |
+          CANISTER_NAME=estate_backend
+          export CANISTER_ID=$( dfx canister id ${CANISTER_NAME} --network=ic)
+          mkdir -p "proposals/${CANISTER_NAME}"
+          touch "proposals/${CANISTER_NAME}/upgrade.json"
+          ./quill sns \
+              --canister-ids-file ./sns_canister_ids.json \
+              --pem-file actions_identity.pem \
+              make-proposal \
+              --title "Add ${CANISTER_NAME} Canisters - ${CANISTER_ID} as Dapp to DAO" \
+              --summary "
+              # Add ${CANISTER_NAME} Canisters with ${CANISTER_ID}
+
+            ${{ steps.changelog.outputs.changes }}
+            " \
+            --url 'https://estatedao.org' \
+            action=opt variant {RegisterDappCanisters = record {canister_ids=vec {principal\"$CANISTER_ID\"};};};})" \
+            $NEURON_ID > "proposals/${CANISTER_NAME}/upgrade.json"
+          ./quill send proposals/${CANISTER_NAME}/upgrade.json --yes
+         

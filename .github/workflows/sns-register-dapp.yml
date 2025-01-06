@@ -54,7 +54,7 @@ jobs:
 
           echo $output
           echo "\n\n\n"
-          
-          ./quill sns --canister-ids-file ./sns_canister_ids.json --pem-file actions_identity.pem make-proposal "$NEURON_ID" --proposal $output > message.json
+
+          ./quill sns --canister-ids-file ./sns_canister_ids.json --pem-file actions_identity.pem make-proposal "$NEURON_ID" --proposal "$output" > message.json
 
           ./quill send message.json --yes

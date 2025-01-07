@@ -1,0 +1,48 @@
+name: View Canister Logs
+on:
+  workflow_dispatch:
+    inputs:
+      log_visibility:
+          description: 'logs visibility'
+          required: false
+          default: 'set logs visibility to public'
+          type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  view-logs:
+    name: View Canister Logs
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with: 
+          dfx-version: "0.24.3"
+
+      - name: copy prod canister ids json 
+        run: |
+          cp canister_ids_prod.json canister_ids.json
+    
+      - name: Confirm dfx installation
+        run: dfx --version
+
+      - name: Import DFX identity
+        run: |
+          touch actions_identity.pem
+          echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
+          dfx identity import --storage-mode=plaintext actions actions_identity.pem
+          dfx identity use actions
+
+      - name: View canister logs
+        run: |
+          dfx canister update-settings estate_backend --log-visibility ${{ inputs.log_visibility }} --ic

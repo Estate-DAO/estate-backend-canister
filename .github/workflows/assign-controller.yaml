@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   view-logs:
-    name: View Canister Logs
+    name: assign controller
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -43,6 +43,6 @@ jobs:
           dfx identity import --storage-mode=plaintext actions actions_identity.pem
           dfx identity use actions
 
-      - name: View canister logs
+      - name: Assign controller
         run: |
             dfx canister update-settings estate_backend --add-controller ${{ inputs.canister_id }} --ic

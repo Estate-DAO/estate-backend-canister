@@ -65,6 +65,15 @@ jobs:
           hash=$(sha256sum < .dfx/ic/canisters/estate_backend/estate_backend.wasm)
           echo "Module Hash: ${hash}"
       
+      - name: Get commits since last release
+        uses: loopwerk/tag-changelog@v1
+        id: changelog
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Display Changelog
+        run: echo "${{ steps.changelog.outputs.changes }}"
+
       - name: Submit upgrade proposal for estate_backend canister
         run: |
           CANISTER_NAME=estate_backend
@@ -78,6 +87,8 @@ jobs:
               --title "Upgrade ${CANISTER_NAME} Canisters" \
               --summary "
               # Upgrade ${CANISTER_NAME}
+              
+              ## Changes Since Last Release
 
             ${{ steps.changelog.outputs.changes }}
             " \

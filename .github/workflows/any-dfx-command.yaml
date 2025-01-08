@@ -1,11 +1,11 @@
-name: Assign Controller
+name: Any dfx command
 on:
   workflow_dispatch:
     inputs:
-      canister_id:
-          description: 'Assign root as controller'
+      dfx_command:
+          description: 'any dfx commands'
           required: true
-          default: 'canister_id to add as controller'
+          default: 'dfx command to run (other than dfx deploy)'
           type: string
 
 concurrency:
@@ -45,4 +45,5 @@ jobs:
 
       - name: Assign controller
         run: |
-            dfx canister update-settings estate_backend --add-controller ${{ inputs.canister_id }} --ic
+            # dfx canister update-settings estate_backend --add-controller ${{ inputs.canister_id }} --ic
+            ${{ inputs.dfx_command }}

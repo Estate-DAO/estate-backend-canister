@@ -32,3 +32,6 @@ dontcommit.md
 *.env.fly
 *.log
 *.txt
+.dfx/
+.dfx_old
+.dfx_old2

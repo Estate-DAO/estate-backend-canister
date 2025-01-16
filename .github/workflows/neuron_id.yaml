@@ -1,0 +1,61 @@
+name: Neuron command
+on:
+  workflow_dispatch:
+    inputs:
+      dfx_command:
+          description: 'Neuron commands'
+          required: true
+          default: 'dfx command to run (other than dfx deploy)'
+          type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  view-logs:
+    name: assign controller
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with: 
+          dfx-version: "0.24.3"
+
+      - name: Install YQ
+        uses: dcarbone/install-yq-action@v1.3.1
+        with:
+          version: "v4.45.1" 
+          download-compressed: true
+    
+      - name: copy prod canister ids json 
+        run: |
+          cp canister_ids_prod.json canister_ids.json
+    
+      - name: Confirm dfx installation
+        run: dfx --version
+
+      - name: Import DFX identity
+        run: |
+          touch actions_identity.pem
+          echo "${{ secrets.ESTATE_DAO_SNS_PROPOSAL_SUBMISSION_IDENTITY_PRIVATE_KEY }}" > actions_identity.pem
+          dfx identity import --storage-mode=plaintext actions actions_identity.pem
+          dfx identity use actions
+          echo "DX_PRINCIPAL=$(dfx identity get-principal)" >> $GITHUB_ENV
+
+      
+      - name: list neurons for the given principal
+        run: |    
+            echo "SNS_GOVERNANCE_CANISTER_ID=$(yq eval '.governance_canister_id' sns_canister_ids.json)" >> $GITHUB_ENV
+
+            dfx canister \
+            --network ic \
+            call "${SNS_GOVERNANCE_CANISTER_ID}" \
+            list_neurons "(record {of_principal = opt principal\"${DX_PRINCIPAL}\"; limit = 5})"

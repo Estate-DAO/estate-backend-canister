@@ -1,0 +1,6 @@
+target/
+.dfx/
+
+
+.dfx_old/
+.dfx_old2/

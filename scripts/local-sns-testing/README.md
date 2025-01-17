@@ -2,6 +2,8 @@
 
 [see video](./video/register_identity_for_swap.webm)
 
+https://github.com/Estate-DAO/estate-backend-canister/raw/refs/heads/estate_backend_integration/scripts/local-sns-testing/video/register_identity_for_swap.webm
+
 So a local-sns with swap completed is setup.
 
 

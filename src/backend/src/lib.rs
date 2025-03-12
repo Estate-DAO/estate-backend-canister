@@ -113,7 +113,7 @@ fn update_payment_details(
 ////////////////////////////
 // READ
 ////////////////////////////
-
+//ai: just like this function,  src/backend/src/lib.rs:118, write one more function to get_user_booking_by_booking_id
 #[ic_cdk_macros::query]
 fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
     STATE.with(|state| {

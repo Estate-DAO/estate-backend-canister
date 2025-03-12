@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::BookingId;
 
+// ai: see this struct. the bookings BtreeMap contains bookingId. 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct UserInfoAndBookings {
     pub primary_user: AdultDetail,
@@ -25,6 +26,7 @@ impl UserInfoAndBookings {
     //     })
     // }
 
+    // ai: you might have to implement the accessor function (get) for booking by booking id for the given user (email) here. AI!
     pub fn get_contact_info(&self) -> Option<(String, String)> {
         match (&self.primary_user.email, &self.primary_user.phone) {
             (Some(email), Some(phone)) => Some((email.clone(), phone.clone())),

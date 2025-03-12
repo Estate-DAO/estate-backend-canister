@@ -65,7 +65,7 @@ impl CanisterState {
     pub fn get_user_profile(&self, email: &str) -> Option<&UserInfoAndBookings> {
         self.users.get(email)
     }
-
+    //ai: you might have to also the add one more function here.
     pub fn get_user_bookings(&self, email: &str) -> Option<&BTreeMap<BookingId, Booking>> {
         self.users.get(email).map(|profile| &profile.bookings)
     }

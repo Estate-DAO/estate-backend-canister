@@ -65,7 +65,21 @@ impl CanisterState {
     pub fn get_user_profile(&self, email: &str) -> Option<&UserInfoAndBookings> {
         self.users.get(email)
     }
-    //ai: you might have to also the add one more function here.
+    pub fn get_booking_by_id(&self, booking_id: &BookingId) -> Option<&Booking> {
+        // First try to find the user with the email from the booking_id
+        let user_email = booking_id.get_user_email();
+        if let Some(user) = self.users.get(user_email) {
+            // Then try to get the booking from that user
+            return user.get_booking_by_id(booking_id);
+        }
+        
+        // If not found by direct lookup, search all users
+        self.users
+            .values()
+            .flat_map(|user| user.bookings.values())
+            .find(|booking| booking.booking_id == *booking_id)
+    }
+
     pub fn get_user_bookings(&self, email: &str) -> Option<&BTreeMap<BookingId, Booking>> {
         self.users.get(email).map(|profile| &profile.bookings)
     }

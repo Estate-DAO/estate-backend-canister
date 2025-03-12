@@ -1,10 +1,9 @@
 mod models;
 pub use models::*;
 mod controller;
-pub use controller::is_controller;
 use candid::Principal;
-use candid::CandidType;
-use ic_cdk::{post_upgrade, pre_upgrade, print, storage};
+pub use controller::is_controller;
+use ic_cdk::{post_upgrade, pre_upgrade, storage};
 use std::cell::RefCell;
 
 thread_local! {
@@ -71,10 +70,18 @@ fn post_upgrade() {
 ////////////////////////////
 // CREATE / UPDATE
 ////////////////////////////
-
 #[ic_cdk_macros::update(guard = "is_controller")]
 fn add_booking(email: String, booking: Booking) -> Result<String, String> {
     STATE.with(|state| state.borrow_mut().add_booking_and_user(&email, booking))
+}
+
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn update_booking_message(booking_id: BookingId, message: String) -> Result<String, String> {
+    STATE.with(|state| {
+        state
+            .borrow_mut()
+            .update_booking_message(booking_id, message)
+    })
 }
 
 // #[ic_cdk_macros::update(guard = "is_controller")]
@@ -115,12 +122,7 @@ fn update_payment_details(
 ////////////////////////////
 #[ic_cdk_macros::query]
 fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
-    STATE.with(|state| {
-        state
-            .borrow()
-            .get_booking_by_id(&booking_id)
-            .cloned()
-    })
+    STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
 }
 
 #[ic_cdk_macros::query]

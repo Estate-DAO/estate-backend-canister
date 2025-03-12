@@ -17,6 +17,13 @@ pub struct BookingId {
 }
 
 impl BookingId {
+    pub fn new(app_reference: String, email: String) -> Self {
+        Self {
+            app_reference,
+            email,
+        }
+    }
+
     pub fn get_app_reference(&self) -> &str {
         &self.app_reference
     }
@@ -115,6 +122,10 @@ impl Booking {
 
     pub fn update_payment_status(&mut self, new_status: BackendPaymentStatus) {
         self.payment_details.payment_status = new_status;
+    }
+
+    pub fn get_book_room_status(&self) -> Option<&BEBookRoomResponse> {
+        self.book_room_status.as_ref()
     }
 
     // pub fn is_confirmed(&self) -> bool {

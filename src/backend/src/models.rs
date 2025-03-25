@@ -83,7 +83,7 @@ impl CanisterState {
     }
 
     pub fn update_payment_details(
-        &self,
+        &mut self,
         booking_id: BookingId,
         payment_details: PaymentDetails,
     ) -> Result<Booking, String> {
@@ -91,38 +91,47 @@ impl CanisterState {
         let cloned_payment_api_resp = payment_details.payment_api_response.clone();
 
         // Find the booking by ID.
-        let mut booking = self
+        let user_email = booking_id.get_user_email();
+        let booking = self
             .users
-            .values()
-            .flat_map(|user| user.bookings.values())
-            .find(|booking| booking.booking_id == booking_id)
-            .cloned()
-            .ok_or("Booking not found".to_string())?;
+            .get_mut(user_email)
+            .ok_or_else(|| format!("User with email '{}' not found", user_email))
+            .and_then(|user| {
+                user.bookings
+                    .get_mut(&booking_id)
+                    .map(|booking| {
+                        booking.payment_details = payment_details.clone();
 
-        booking.payment_details = payment_details;
+                        let status = cloned_payment_api_resp.payment_status;
 
-        let status = cloned_payment_api_resp.payment_status;
+                        let payment_status = match status.as_str() {
+                            "finished" => {
+                                let trans_ref =
+                                    format!("{:?} - COMPLETED", cloned_payment_api_resp.payment_id);
+                                BackendPaymentStatus::Paid(trans_ref)
+                            }
+                            "cancelled" => {
+                                let trans_ref =
+                                    format!("{:?} - CANCELLED", cloned_payment_api_resp.payment_id);
+                                BackendPaymentStatus::Unpaid(Some(trans_ref))
+                            }
+                            _ => {
+                                let trans_ref =
+                                    format!("{:?} - PENDING", cloned_payment_api_resp.payment_id);
+                                BackendPaymentStatus::Unpaid(Some(trans_ref))
+                            }
+                        };
 
-        let payment_status = match status.as_str() {
-            "finished" => {
-                let trans_ref = format!("{:?} - COMPLETED", cloned_payment_api_resp.payment_id);
-                BackendPaymentStatus::Paid(trans_ref)
-            }
-            "cancelled" => {
-                let trans_ref = format!("{:?} - CANCELLED", cloned_payment_api_resp.payment_id);
-                BackendPaymentStatus::Unpaid(Some(trans_ref))
-            }
-            _ => {
-                let trans_ref = format!("{:?} - PENDING", cloned_payment_api_resp.payment_id);
-                BackendPaymentStatus::Unpaid(Some(trans_ref))
-            }
-        };
-        let pay_stat_c = payment_status.clone();
-
-        booking.update_payment_status(payment_status);
-        booking.payment_details.payment_status = pay_stat_c;
-
-        println!("{:?}", booking);
+                        booking.update_payment_status(payment_status);
+                        booking.clone()
+                    })
+                    .ok_or_else(|| {
+                        format!(
+                            "Booking with app_reference '{}' not found",
+                            booking_id.get_app_reference()
+                        )
+                    })
+            })?;
         Ok(booking)
     }
     // pub fn get_booking(&self, email: &str, booking_id: &str) -> Option<&Booking> {

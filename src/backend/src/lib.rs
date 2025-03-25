@@ -75,14 +75,14 @@ fn add_booking(email: String, booking: Booking) -> Result<String, String> {
     STATE.with(|state| state.borrow_mut().add_booking_and_user(&email, booking))
 }
 
-#[ic_cdk_macros::update(guard = "is_controller")]
-fn update_booking_message(booking_id: BookingId, message: String) -> Result<String, String> {
-    STATE.with(|state| {
-        state
-            .borrow_mut()
-            .update_booking_message(booking_id, message)
-    })
-}
+// #[ic_cdk_macros::update(guard = "is_controller")]
+// fn update_booking_message(booking_id: BookingId, message: String) -> Result<String, String> {
+//     STATE.with(|state| {
+//         state
+//             .borrow_mut()
+//             .update_booking_message(booking_id, message)
+//     })
+// }
 
 // #[ic_cdk_macros::update(guard = "is_controller")]
 // fn update_book_room_response(booking_id: BookingId, book_room_response: BookRoomResponse) -> Result<(), String> {
@@ -120,10 +120,10 @@ fn update_payment_details(
 ////////////////////////////
 // READ
 ////////////////////////////
-#[ic_cdk_macros::query]
-fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
-    STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
-}
+// #[ic_cdk_macros::query]
+// fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
+//     STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
+// }
 
 #[ic_cdk_macros::query]
 fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
@@ -170,5 +170,16 @@ fn greet(GreetParams(name): GreetParams) -> GreetResponse {
     let resp_strng = format!("Hello, {}!", name);
     GreetResponse(resp_strng)
 }
+
+// #[ic_cdk_macros::query]
+// fn is_booking_paid(booking_id: BookingId) -> bool {
+//     STATE.with(|state| {
+//         state
+//             .borrow()
+//             .get_booking_by_id(&booking_id)
+//             .map(|booking| booking.payment_details.is_paid())
+//             .unwrap_or(false)
+//     })
+// }
 
 ic_cdk_macros::export_candid!();

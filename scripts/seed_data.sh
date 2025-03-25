@@ -165,3 +165,84 @@ dfx canister call estate_backend add_booking '(
     }
   }
 )'
+
+
+# Test Case 3: no payment status + booking not confirmed 
+dfx canister call estate_backend add_booking '(
+  "alice1@example.com",
+  record {
+    booking_id = record {
+      app_reference = "HB2403-15938-78748";
+      email = "alice1@example.com"
+    };
+    guests = record {
+      adults = vec {
+        record {
+          first_name = "Alice1";
+          last_name = opt "Smith1";
+          email = opt "alice1@example.com";
+          phone = opt "+1-555-0123"
+        }
+      };
+      children = vec {
+        record {
+          age = 8;
+          first_name = "Bob1";
+          last_name = opt "Smith1"
+        }
+      }
+    };
+    book_room_status = null;
+    user_selected_hotel_room_details = record {
+      hotel_details = record {
+        hotel_code = "HILTON123";
+        hotel_name = "Hilton Garden Inn";
+        hotel_image = "https://example.com/hilton.jpg";
+        block_room_id = "BLOCK789";
+        hotel_location = "Downtown, New York";
+        hotel_token = "TOKEN789"
+      };
+      room_details = vec {
+        record {
+          room_price = 999.99;
+          room_unique_id = "DLXROOM123";
+          room_type_name = "Deluxe King"
+        }
+      };
+      destination = opt record {
+        city_id = "NYC";
+        city = "New York";
+        country_code = "US";
+        country_name = "United States"
+      };
+      requested_payment_amount = 999.99;
+      date_range = record {
+        start = record { 2025; 3; 24 };
+        end = record { 2025; 3; 26 }
+      }
+    };
+    payment_details = record {
+      booking_id = record {
+        app_reference = "HB2403-15938-78748";
+        email = "alice1@example.com"
+      };
+      payment_status = variant { Unpaid = opt "" };
+      payment_api_response = record {
+        updated_at = "";
+        actually_paid = 0.00;
+        provider = "";
+        invoice_id = 0  ;
+        order_description = "";
+        pay_amount = 0.00;
+        pay_currency = "";
+        created_at = "";
+        payment_status = "";
+        price_amount = 0;
+        purchase_id = 0;
+        order_id = "";
+        price_currency = "";
+        payment_id = 0
+      }
+    }
+  }
+)'

@@ -4,7 +4,7 @@ use crate::Booking;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use super::BookingId;
+use super::{BEBookRoomResponse, BookingDetails, BookingId};
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct UserInfoAndBookings {
@@ -24,6 +24,10 @@ impl UserInfoAndBookings {
     //         bookings: BTreeMap::new(),
     //     })
     // }
+
+    pub fn get_booking_by_id(&self, booking_id: &BookingId) -> Option<&Booking> {
+        self.bookings.get(booking_id)
+    }
 
     pub fn get_contact_info(&self) -> Option<(String, String)> {
         match (&self.primary_user.email, &self.primary_user.phone) {
@@ -50,6 +54,33 @@ impl UserInfoAndBookings {
 
         self.bookings.insert(booking.booking_id.clone(), booking); // Insert into BTreeMap
         Ok(())
+    }
+
+    pub fn update_booking_message(
+        &mut self,
+        booking_id: &BookingId,
+        message: String,
+    ) -> Result<(), String> {
+        if let Some(booking) = self.bookings.get_mut(booking_id) {
+            let frontend_message = format!("[frontend] {}", message);
+
+            // If book_room_status is None, create a new one with the message
+            if booking.book_room_status.is_none() {
+                booking.book_room_status = Some(BEBookRoomResponse {
+                    status: "Updated".to_string(),
+                    message: frontend_message,
+                    commit_booking: BookingDetails::default(),
+                });
+            } else {
+                // Update the existing book_room_status message
+                if let Some(status) = &mut booking.book_room_status {
+                    status.message = frontend_message;
+                }
+            }
+            Ok(())
+        } else {
+            Err("Booking ID does not exist".to_string())
+        }
     }
 
     // pub fn get_all_booking_summaries(&self) -> Vec<String> {

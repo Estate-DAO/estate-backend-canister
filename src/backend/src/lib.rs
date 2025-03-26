@@ -171,15 +171,15 @@ fn greet(GreetParams(name): GreetParams) -> GreetResponse {
     GreetResponse(resp_strng)
 }
 
-// #[ic_cdk_macros::query]
-// fn is_booking_paid(booking_id: BookingId) -> bool {
-//     STATE.with(|state| {
-//         state
-//             .borrow()
-//             .get_booking_by_id(&booking_id)
-//             .map(|booking| booking.payment_details.is_paid())
-//             .unwrap_or(false)
-//     })
-// }
+#[ic_cdk_macros::query]
+fn is_booking_paid(booking_id: BookingId) -> bool {
+    STATE.with(|state| {
+        state
+            .borrow()
+            .get_booking_by_id(&booking_id)
+            .map(|booking| booking.payment_details.is_paid())
+            .unwrap_or(false)
+    })
+}
 
 ic_cdk_macros::export_candid!();

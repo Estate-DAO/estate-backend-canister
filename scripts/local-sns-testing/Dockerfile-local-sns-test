@@ -1,0 +1,32 @@
+# FROM ghcr.io/dfinity/sns-testing:main 
+# # FROM ubuntu:24.04
+
+# # setup basic docker environment with local sns setup
+# # WORKDIR /home/sns
+# # RUN chmod +x /setup_locally.sh && /setup_locally.sh
+
+# WORKDIR /dapp
+
+# COPY . .
+
+# RUN mkdir -p .dfx/local
+
+# # WORKDIR /dapp
+# # copy the scripts to the base of the folder in dockerfile
+# # COPY ./scripts/local-sns-testing/*.sh .
+
+# # RUN bash ./setup_locally.sh
+
+
+FROM ghcr.io/dfinity/sns-testing:main 
+
+WORKDIR /dapp
+
+# Copy all files to the container
+COPY . .
+
+# Ensure necessary directories exist
+RUN mkdir -p .dfx/local
+
+# Set entrypoint (if needed, modify as required)
+CMD ["/bin/bash"]

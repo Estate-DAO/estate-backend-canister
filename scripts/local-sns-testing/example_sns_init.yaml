@@ -75,13 +75,13 @@ logo: logo.png
 
 # URL that represents the SNS, usually a dapp controlled by the SNS project.
 # Must be a string from 10 to 512 bytes, and the domain must be HTTPS.
-url: https://mydapp.com
+url: https://estatetest.com
 
 # Metadata for the NNS proposal required to create the SNS. This data will be
 # shown only in the NNS proposal.
 NnsProposal:
     # The title of the NNS proposal. Must be a string of 4 to 256 bytes.
-    title: "NNS Proposal to create an SNS named 'Rock Out'"
+    title: "NNS Proposal to create an SNS named 'estate dao test'"
 
     # The HTTPS address of a forum post with additional context required to evaluate the NNS
     # proposal.
@@ -385,7 +385,7 @@ Swap:
     # direct participants (`minimum_participants`) is reached (otherwise, it
     # would be aborted).
     # Must be at least `min_participants * minimum_direct_participation_icp`.
-    maximum_direct_participation_icp: 2000 tokens
+    maximum_direct_participation_icp: 3000 tokens
 
     # The minimum amount of ICP that each participant must contribute
     # to participate. This field is specified as a token. For instance,
@@ -395,7 +395,7 @@ Swap:
     # The maximum amount of ICP that each participant may contribute
     # to participate. This field is specified as a token. For instance,
     # "1 token".
-    maximum_participant_icp: 2000 tokens
+    maximum_participant_icp: 20000 tokens
 
     # The text that swap participants must confirm before they may participate
     # in the swap.

@@ -40,16 +40,13 @@ fn get_controllers() -> Vec<Principal> {
 pub fn add_controller(new_controller: Principal) -> Result<(), String> {
     STATE.with(|state| {
         let mut state = state.borrow_mut();
-        if !state
-            .controllers
-            .as_ref()
-            .map(|f| f.contains(&new_controller))
-            .unwrap_or(false)
-        {
-            state.controllers.as_mut().map(|f| f.push(new_controller));
-            Ok(())
-        } else {
+        let controllers = state.controllers.get_or_insert_with(Vec::new);
+
+        if controllers.contains(&new_controller) {
             Err("Controller already exists.".to_string())
+        } else {
+            controllers.push(new_controller);
+            Ok(())
         }
     })
 }

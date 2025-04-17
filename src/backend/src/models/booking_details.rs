@@ -1,9 +1,9 @@
 use crate::{PaymentDetails, UserDetails};
-use candid::{CandidType, Principal};
+use candid::CandidType;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use super::BackendPaymentStatus;
+use super::{BEPaymentApiResponse, BackendPaymentStatus};
 
 pub type AppReference = String;
 pub type UserEmail = String;
@@ -120,12 +120,56 @@ impl Booking {
         )
     }
 
-    pub fn update_payment_status(&mut self, new_status: BackendPaymentStatus) {
+    fn update_payment_status(&mut self, new_status: BackendPaymentStatus) {
         self.payment_details.payment_status = new_status;
+    }
+
+    pub fn update_backend_payment_status_from_api(&mut self, api_response: &BEPaymentApiResponse) {
+        let payment_status = match api_response.payment_status.as_str() {
+            "finished" => {
+                let trans_ref = format!("{:?} - COMPLETED", api_response.payment_id);
+                BackendPaymentStatus::Paid(trans_ref)
+            }
+            "cancelled" => {
+                let trans_ref = format!("{:?} - CANCELLED", api_response.payment_id);
+                BackendPaymentStatus::Unpaid(Some(trans_ref))
+            }
+            _ => {
+                let trans_ref = format!("{:?} - PENDING", api_response.payment_id);
+                BackendPaymentStatus::Unpaid(Some(trans_ref))
+            }
+        };
+        self.update_payment_status(payment_status);
     }
 
     pub fn get_book_room_status(&self) -> Option<&BEBookRoomResponse> {
         self.book_room_status.as_ref()
+    }
+
+    pub fn update_book_room_status(
+        &mut self,
+        new_status: BEBookRoomResponse,
+    ) -> Result<(), String> {
+        let current_status = self
+            .book_room_status
+            .as_ref()
+            .map(|status| status.commit_booking.resolved_booking_status)
+            .unwrap_or(ResolvedBookingStatus::Unknown);
+
+        if !current_status.is_valid_transition(&new_status.commit_booking.resolved_booking_status) {
+            return Err(format!(
+                "Invalid status transition from {:?} to {:?}",
+                current_status, new_status.commit_booking.resolved_booking_status
+            ));
+        }
+        self.book_room_status = Some(new_status);
+        Ok(())
+    }
+
+    pub fn update_payment_details_with_api_response(&mut self, payment_details: PaymentDetails) {
+        let api_response = payment_details.payment_api_response.clone();
+        self.payment_details = payment_details;
+        self.update_backend_payment_status_from_api(&api_response);
     }
 
     // pub fn is_confirmed(&self) -> bool {
@@ -240,15 +284,57 @@ pub struct BookingDetails {
     pub booking_ref_no: String,
     pub confirmation_no: String,
     pub api_status: BookingStatus,
+    #[serde(default)]
+    pub resolved_booking_status: ResolvedBookingStatus,
     pub booking_status: String,
 }
 
-// /// todo: shall we use a string for telling the details of why booking failed / or confirmed with some sort of transaction_id?
-#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug)]
+#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug, Copy)]
 pub enum BookingStatus {
     #[default]
     BookFailed,
     Confirmed,
+}
+
+#[derive(CandidType, PartialEq, Deserialize, Default, Serialize, Clone, Debug, Copy)]
+pub enum ResolvedBookingStatus {
+    BookingConfirmed,
+    /// sometimes booking goes on hold and needs to be checked periodically (say, every 4s)
+    /// to see if the status is finally BookingCancelled, BookingFailed or BookingConfirmed
+    BookingOnHold,
+    BookingCancelled,
+    BookingFailed,
+    #[default]
+    Unknown,
+}
+
+impl ResolvedBookingStatus {
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            ResolvedBookingStatus::BookingConfirmed
+                | ResolvedBookingStatus::BookingCancelled
+                | ResolvedBookingStatus::BookingFailed
+        )
+    }
+
+    pub fn is_valid_transition(&self, next: &ResolvedBookingStatus) -> bool {
+        match self {
+            ResolvedBookingStatus::Unknown => true,
+
+            ResolvedBookingStatus::BookingConfirmed => {
+                matches!(next, ResolvedBookingStatus::BookingConfirmed)
+            }
+
+            ResolvedBookingStatus::BookingOnHold => matches!(
+                next,
+                ResolvedBookingStatus::BookingConfirmed
+                    | ResolvedBookingStatus::BookingCancelled
+                    | ResolvedBookingStatus::BookingFailed
+            ),
+            ResolvedBookingStatus::BookingFailed | ResolvedBookingStatus::BookingCancelled => false,
+        }
+    }
 }
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]

@@ -1,4 +1,4 @@
-mod models;
+pub mod models;
 pub use models::*;
 mod controller;
 use candid::Principal;
@@ -171,7 +171,7 @@ fn greet(GreetParams(name): GreetParams) -> GreetResponse {
     GreetResponse(resp_strng)
 }
 
-#[ic_cdk_macros::query]
+#[ic_cdk_macros::query(guard = "is_controller")]
 fn is_booking_paid(booking_id: BookingId) -> bool {
     STATE.with(|state| {
         state
@@ -181,5 +181,33 @@ fn is_booking_paid(booking_id: BookingId) -> bool {
             .unwrap_or(false)
     })
 }
+
+// #[ic_cdk_macros::query(guard = "is_controller")]
+// fn get_booking_by_app_reference(app_reference: AppReference) -> Option<Booking> {
+//     STATE.with(|state| {
+//         state
+//             .borrow()
+//             .users
+//             .values()
+//             .find_map(|user_info| {
+//                 user_info
+//                     .bookings
+//                     .values()
+//                     .find(|booking| booking.booking_id.get_app_reference() == app_reference)
+//             })
+//             .cloned()
+//     })
+// }
+
+// #[ic_cdk_macros::query(guard = "is_controller")]
+// fn get_booking_by_app_reference_and_email(app_reference: AppReference, email: String) -> Option<Booking> {
+//     let booking_id = BookingId::new(app_reference, email);
+//     STATE.with(|state| {
+//         state
+//             .borrow()
+//             .get_booking_by_id(&booking_id)
+//             .cloned()
+//     })
+// }
 
 ic_cdk_macros::export_candid!();

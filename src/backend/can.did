@@ -38,6 +38,7 @@ type BookingDetails = record {
   booking_ref_no : text;
   booking_status : text;
   confirmation_no : text;
+  resolved_booking_status : ResolvedBookingStatus;
   booking_id : BookingId;
   travelomatrix_id : text;
 };
@@ -74,6 +75,13 @@ type PaymentDetails = record {
   booking_id : BookingId;
   payment_api_response : BEPaymentApiResponse;
 };
+type ResolvedBookingStatus = variant {
+  BookingConfirmed;
+  BookingOnHold;
+  BookingFailed;
+  Unknown;
+  BookingCancelled;
+};
 type Result = variant { Ok : text; Err : text };
 type Result_1 = variant { Ok; Err : text };
 type Result_2 = variant { Ok : Booking; Err : text };
@@ -96,6 +104,7 @@ service : {
   get_controllers : () -> (vec principal) query;
   get_user_bookings : (text) -> (opt vec Booking) query;
   greet : (text) -> (text) query;
+  is_booking_paid : (BookingId) -> (bool) query;
   remove_controller : (principal) -> (Result_1);
   update_book_room_response : (BookingId, BEBookRoomResponse) -> (Result);
   update_payment_details : (BookingId, PaymentDetails) -> (Result_2);

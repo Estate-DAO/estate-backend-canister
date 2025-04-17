@@ -1,8 +1,7 @@
-use std::collections::BTreeMap;
-
 use crate::Booking;
-use candid::{CandidType, Principal};
+use candid::CandidType;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 use super::{BEBookRoomResponse, BookingDetails, BookingId};
 
@@ -91,7 +90,7 @@ impl UserInfoAndBookings {
 }
 
 // UserDetails scope
-#[derive(CandidType, Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(CandidType, Deserialize, Serialize, Default, Clone, Debug)]
 pub struct UserDetails {
     pub adults: Vec<AdultDetail>,
     pub children: Vec<ChildDetail>,

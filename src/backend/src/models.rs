@@ -17,8 +17,6 @@ pub use greet::*;
 // mod booking_state;
 // // pub use booking_state::*;
 
-mod tests;
-
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct CanisterState {
     // Map from email/phone watever to UserInfoAndBookings

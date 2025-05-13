@@ -23,6 +23,7 @@ pub struct CanisterState {
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub users:
     pub users: BTreeMap<String, UserInfoAndBookings>,
+    pub email_sent: BTreeMap<BookingId, bool>,
     // pub ongoing_bookings: BTreeMap<BookingId, BookingState>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
@@ -34,6 +35,7 @@ impl CanisterState {
     pub fn new() -> Self {
         Self {
             users: BTreeMap::new(),
+            email_sent: BTreeMap::new(),
             // ongoing_bookings: BTreeMap::new(),
             controllers: None,
         }
@@ -190,6 +192,32 @@ impl CanisterState {
                 user.update_booking_message(&booking_id, message)
                     .map(|_| "Message updated successfully".to_string())
             })
+    }
+
+    pub fn update_email_sent(&mut self, booking_id: BookingId, sent: bool) -> Result<(), String> {
+        // check if the status is already set to true.
+        if self.email_sent.contains_key(&booking_id) {
+            return Err("Email already sent".to_string());
+        }
+        self.email_sent.insert(booking_id, sent);
+        Ok(())
+    }
+
+    pub fn get_email_sent(&mut self, booking_id: &BookingId) -> Result<bool, String> {
+        // First check if we have an email sent status for this booking
+        if let Some(sent) = self.email_sent.get(booking_id) {
+            return Ok(*sent);
+        }
+
+        // If we don't have an email status, check if the booking exists
+        if self.get_booking_by_id(booking_id).is_none() {
+            return Err(format!("Booking not found: {:?}", booking_id));
+        }
+
+        // If we get here, the booking exists but we don't have an email status yet
+        // Create the entry with default value of false and return it
+        self.email_sent.insert(booking_id.clone(), false);
+        Ok(false)
     }
 }
 

@@ -120,10 +120,6 @@ fn update_payment_details(
 ////////////////////////////
 // READ
 ////////////////////////////
-// #[ic_cdk_macros::query]
-// fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
-//     STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
-// }
 
 #[ic_cdk_macros::query]
 fn get_user_bookings(email: String) -> Option<Vec<Booking>> {
@@ -180,6 +176,21 @@ fn is_booking_paid(booking_id: BookingId) -> bool {
             .map(|booking| booking.payment_details.is_paid())
             .unwrap_or(false)
     })
+}
+
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn update_email_sent(booking_id: BookingId, sent: bool) -> Result<(), String> {
+    STATE.with(|state| state.borrow_mut().update_email_sent(booking_id, sent))
+}
+
+#[ic_cdk_macros::query(guard = "is_controller")]
+fn get_email_sent(booking_id: BookingId) -> Result<bool, String> {
+    STATE.with(|state| state.borrow_mut().get_email_sent(&booking_id))
+}
+
+#[ic_cdk_macros::query]
+fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
+    STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
 }
 
 // #[ic_cdk_macros::query(guard = "is_controller")]

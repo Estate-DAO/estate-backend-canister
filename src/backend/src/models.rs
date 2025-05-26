@@ -1,5 +1,6 @@
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
+use serde_json_any_key::any_key_map;
 use std::collections::BTreeMap;
 
 mod payment_details;
@@ -23,72 +24,48 @@ pub struct CanisterState {
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub users:
     pub users: BTreeMap<String, UserInfoAndBookings>,
-    pub email_sent: BTreeMap<BookingId, bool>,
-    // pub ongoing_bookings: BTreeMap<BookingId, BookingState>,
+    pub email_sent: Option<EmailSentStruct>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
     // pub controllers: Vec<Principal>,
     // pub admin_principal: Vec<Principal>
 }
 
+#[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
+pub struct EmailSentStruct {
+    #[serde(with = "any_key_map")]
+    pub email_sent: BTreeMap<BookingId, bool>,
+}
+
+impl EmailSentStruct {
+    pub fn update_email_sent(&mut self, booking_id: BookingId, sent: bool) -> Result<(), String> {
+        // check if the status is already set to true.
+        if self.email_sent.contains_key(&booking_id) {
+            return Err("Email already sent".to_string());
+        }
+        self.email_sent.insert(booking_id, sent);
+        Ok(())
+    }
+
+    /// if the booking_id does not exist in email_sent, return None
+    pub fn get_email_sent_status_for_booking_id(&self, booking_id: &BookingId) -> Option<bool> {
+        // First check if we have an email sent status for this booking
+        if let Some(sent) = self.email_sent.get(booking_id) {
+            return Some(*sent);
+        }
+        None
+    }
+}
+
 impl CanisterState {
     pub fn new() -> Self {
         Self {
             users: BTreeMap::new(),
-            email_sent: BTreeMap::new(),
+            email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
             controllers: None,
         }
     }
-
-    // pub fn create_booking(&mut self, id: BookingId) -> Result<(), String> {
-    //     if self.ongoing_bookings.contains_key(&id) {
-    //         return Err("Booking already exists".to_string());
-    //     }
-    //     self.ongoing_bookings.insert(id, BookingState::new());
-    //     Ok(())
-    // }
-
-    // pub fn get_booking_state(&self, id: &BookingId) -> Option<&BookingState> {
-    //     self.ongoing_bookings.get(id)
-    // }
-
-    // pub fn list_bookings_by_status(&self, status: BookingStatus) -> Vec<BookingId> {
-    //     self.ongoing_bookings
-    //         .iter()
-    //         .filter(|(_, state)| state.current_status == status)
-    //         .map(|(id, _)| id.clone())
-    //         .collect()
-    // }
-
-    // pub fn find_stuck_bookings(&self, threshold: std::time::Duration) -> Vec<BookingId> {
-    //     self.ongoing_bookings
-    //         .iter()
-    //         .filter(|(_, state)| !state.is_terminal() && state.time_in_current_state() > threshold)
-    //         .map(|(id, _)| id.clone())
-    //         .collect()
-    // }
-
-    // pub fn update_booking_status(&mut self, id: &BookingId, new_status: BookingStatus) -> Result<(), String> {
-    //     let booking = self.ongoing_bookings.get_mut(id)
-    //         .ok_or_else(|| "Booking not found".to_string())?;
-
-    //     booking.update_status(new_status)?;
-
-    //     // Remove booking if it reached a terminal state
-    //     if booking.is_terminal() {
-    //         self.ongoing_bookings.remove(id);
-    //     }
-
-    //     Ok(())
-    // }
-
-    // pub fn delete_booking(&mut self, id: &BookingId) -> Result<(), String> {
-    //     self.ongoing_bookings
-    //         .remove(id)
-    //         .map(|_| ())
-    //         .ok_or_else(|| "Booking not found".to_string())
-    // }
 
     pub fn add_booking_and_user(
         &mut self,
@@ -194,29 +171,48 @@ impl CanisterState {
             })
     }
 
+    // email_sent methods
+    // initialize email_sent if it is not initialized
+    fn initialize_email_sent_if_not_already(&mut self) {
+        if self.email_sent.is_none() {
+            self.email_sent = Some(EmailSentStruct::default());
+        }
+    }
+
+    fn get_email_sent_mut_value(&mut self) -> &mut EmailSentStruct {
+        self.initialize_email_sent_if_not_already();
+
+        self.email_sent.as_mut().unwrap()
+    }
+
     pub fn update_email_sent(&mut self, booking_id: BookingId, sent: bool) -> Result<(), String> {
         // check if the status is already set to true.
-        if self.email_sent.contains_key(&booking_id) {
-            return Err("Email already sent".to_string());
-        }
-        self.email_sent.insert(booking_id, sent);
-        Ok(())
+        self.get_email_sent_mut_value()
+            .update_email_sent(booking_id, sent)
     }
 
     pub fn get_email_sent(&mut self, booking_id: &BookingId) -> Result<bool, String> {
-        // First check if we have an email sent status for this booking
-        if let Some(sent) = self.email_sent.get(booking_id) {
-            return Ok(*sent);
+        //  check if email_sent status for the booking_id exists. if yes, send the status
+        if let Some(sent_val) = self
+            .get_email_sent_mut_value()
+            .get_email_sent_status_for_booking_id(booking_id)
+        {
+            return Ok(sent_val);
         }
 
-        // If we don't have an email status, check if the booking exists
+        //  if email_sent status for the booking_id  DOES NOT exist. if yes, check if booking_id exists. if no, return error
         if self.get_booking_by_id(booking_id).is_none() {
-            return Err(format!("Booking not found: {:?}", booking_id));
+            return Err(format!(
+                "Booking does not exist with booking_id {:?} ",
+                booking_id
+            ));
         }
 
-        // If we get here, the booking exists but we don't have an email status yet
-        // Create the entry with default value of false and return it
-        self.email_sent.insert(booking_id.clone(), false);
+        // if email_sent status for the booking_id  DOES NOT exist. if yes, check if booking_id exists.
+        // if yes, create the entry with default value ( false ) and return it
+        let _ = self
+            .get_email_sent_mut_value()
+            .update_email_sent(booking_id.clone(), false)?;
         Ok(false)
     }
 }

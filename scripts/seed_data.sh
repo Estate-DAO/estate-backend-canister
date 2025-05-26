@@ -251,11 +251,11 @@ dfx canister call estate_backend add_booking '(
 
 # Test Case 4: Booking with pending status
 dfx canister call estate_backend add_booking '(
-  "user@example.com",
+  "tripathi.abhishek.iitkgp@gmail.com",
   record {
     booking_id = record {
       app_reference = "ABC123";
-      email = "user@example.com"
+      email = "tripathi.abhishek.iitkgp@gmail.com"
     };
     guests = record {
       adults = vec {
@@ -278,7 +278,7 @@ dfx canister call estate_backend add_booking '(
         confirmation_no = "";
         booking_id = record {
           app_reference = "ABC123";
-          email = "user@example.com"
+          email = "tripathi.abhishek.iitkgp@gmail.com"
         };
         travelomatrix_id = "TM456";
         resolved_booking_status = variant { Unknown }
@@ -315,7 +315,7 @@ dfx canister call estate_backend add_booking '(
     payment_details = record {
       booking_id = record {
         app_reference = "ABC123";
-        email = "user@example.com"
+        email = "tripathi.abhishek.iitkgp@gmail.com"
       };
       payment_status = variant { Unpaid = opt "" };
       payment_api_response = record {

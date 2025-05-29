@@ -67,6 +67,17 @@ impl CanisterState {
         }
     }
 
+    pub fn get_all_bookings(&self) -> Vec<BookingSummary> {
+        self.users
+            .iter()
+            .flat_map(|(user_email, user)| {
+                user.bookings
+                    .values()
+                    .map(|booking| BookingSummary::from((user_email.as_str(), booking)))
+            })
+            .collect()
+    }
+
     pub fn add_booking_and_user(
         &mut self,
         email: &str,

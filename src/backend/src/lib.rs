@@ -150,12 +150,10 @@ fn update_book_room_response(
 //     })
 // }
 
-// #[ic_cdk_macros::query]
-// fn get_all_bookings() -> Vec<BookingSummary> {
-//     STATE.with(|state| {
-//         state.borrow().get_all_bookings()
-//     })
-// }
+#[ic_cdk_macros::query(guard = "is_controller")]
+fn get_all_bookings() -> Vec<BookingSummary> {
+    STATE.with(|state| state.borrow().get_all_bookings())
+}
 
 #[ic_cdk_macros::query]
 fn greet(GreetParams(name): GreetParams) -> GreetResponse {
@@ -183,7 +181,7 @@ fn update_email_sent(booking_id: BookingId, sent: bool) -> Result<(), String> {
     STATE.with(|state| state.borrow_mut().update_email_sent(booking_id, sent))
 }
 
-#[ic_cdk_macros::query(guard = "is_controller")]
+#[ic_cdk_macros::query]
 fn get_email_sent(booking_id: BookingId) -> Result<bool, String> {
     STATE.with(|state| state.borrow_mut().get_email_sent(&booking_id))
 }

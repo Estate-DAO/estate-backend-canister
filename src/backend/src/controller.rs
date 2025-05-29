@@ -31,7 +31,7 @@ pub fn is_controller() -> Result<(), String> {
     })
 }
 
-#[ic_cdk_macros::query(guard = "is_controller")]
+#[ic_cdk_macros::query]
 fn get_controllers() -> Vec<Principal> {
     STATE.with(|state| state.borrow().controllers.clone().unwrap_or_default())
 }

@@ -3,16 +3,18 @@ use serde::{Deserialize, Serialize};
 use serde_json_any_key::any_key_map;
 use std::collections::BTreeMap;
 
-mod payment_details;
+use crate::migration::SchemaMetadata;
+
+pub mod payment_details;
 pub use payment_details::*;
 
-mod user_details;
+pub mod user_details;
 pub use user_details::*;
 
-mod booking_details;
+pub mod booking_details;
 pub use booking_details::*;
 
-mod greet;
+pub mod greet;
 pub use greet::*;
 
 // mod booking_state;
@@ -27,6 +29,12 @@ pub struct CanisterState {
     pub email_sent: Option<EmailSentStruct>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
+    // Index for payment_id -> booking_id mapping
+    // #[serde(default)]
+    // pub payment_id_index: Option<BTreeMap<u64, BookingId>>,
+    // Schema evolution metadata
+    // #[serde(default)]
+    // pub schema_metadata: Option<SchemaMetadata>,
     // pub controllers: Vec<Principal>,
     // pub admin_principal: Vec<Principal>
 }
@@ -64,6 +72,8 @@ impl CanisterState {
             email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
             controllers: None,
+            // payment_id_index: None,
+            // schema_metadata: None,
         }
     }
 

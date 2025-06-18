@@ -1,10 +1,17 @@
 pub mod models;
 pub use models::*;
 mod controller;
+mod migration;
+mod migrations;
+
 use candid::Principal;
 pub use controller::is_controller;
+
 use ic_cdk::{post_upgrade, pre_upgrade, storage};
 use std::cell::RefCell;
+
+pub mod memory;
+pub mod lifecycle;
 
 thread_local! {
     static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
@@ -28,44 +35,42 @@ thread_local! {
 //     });
 // }
 
-////////////////////////////
-// upgrade API
-////////////////////////////
 
-/// Called just before the canister is upgraded.
-/// This is the last chance for the canister to save any state it wants to keep
-/// before the upgrade is applied.
-/// This function is not called if the upgrade fails.
-/// If this function traps, the upgrade will not be applied.
-/// If this function returns an error, the upgrade will not be applied.
-/// The state saved by this function is not guaranteed to be restored by the
-/// post_upgrade function of the new version of the canister.
-/// The state saved by this function is not guaranteed to be valid for the new
-/// version of the canister.
-#[pre_upgrade]
-fn pre_upgrade() {
-    STATE.with(|state| {
-        storage::stable_save((&*state.borrow(),)).expect("Failed to save stable state");
-    });
-}
+// fn rebuild_payment_id_index() {
+//     STATE.with(|state| {
+//         let mut state = state.borrow_mut();
 
-#[post_upgrade]
-fn post_upgrade() {
-    let state: Result<(CanisterState,), _> = storage::stable_restore();
-    match state {
-        Ok((restored_state,)) => {
-            STATE.with(|state| {
-                *state.borrow_mut() = restored_state;
-            });
-            // init_hook();
-        }
-        Err(err) => {
-            ic_cdk::trap(&format!("Failed to restore stable state: {}", err));
-        }
-    }
-}
+//         // Only rebuild if index doesn't exist or is empty (new field after upgrade)
+//         if let Some(ref payment_index) = state.payment_id_index {
+//             if !payment_index.is_empty() {
+//                 return; // Index already exists, no need to rebuild
+//             }
+//         }
 
-////////////////////////////
+//         // Collect payment_id -> booking_id mappings
+//         let mut payment_mappings = Vec::new();
+//         for user_info in state.users.values() {
+//             for booking in user_info.bookings.values() {
+//                 let payment_id = booking.payment_details.payment_api_response.payment_id;
+//                 if payment_id != 0 {
+//                     payment_mappings.push((payment_id, booking.booking_id.clone()));
+//                 }
+//             }
+//         }
+
+//         // Initialize the index if it doesn't exist
+//         if state.payment_id_index.is_none() {
+//             state.payment_id_index = Some(std::collections::BTreeMap::new());
+//         }
+
+//         // Build index from collected mappings
+//         if let Some(ref mut payment_index) = state.payment_id_index {
+//             for (payment_id, booking_id) in payment_mappings {
+//                 payment_index.insert(payment_id, booking_id);
+//             }
+//         }
+//     });
+// }
 
 ////////////////////////////
 // CREATE / UPDATE

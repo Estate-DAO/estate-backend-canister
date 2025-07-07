@@ -23,8 +23,8 @@ pub struct BEPaymentApiResponse {
     pub provider: String,
     pub payment_id: u64,
     // newer versions of the backend use this payment_id_v2
-    // #[serde(default)]
-    // pub payment_id_v2: String,
+    #[serde(default)]
+    pub payment_id_v2: String,
     pub invoice_id: u64,
     pub payment_status: String,
     // pub pay_address: String,

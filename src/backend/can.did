@@ -21,6 +21,7 @@ type BEPaymentApiResponse = record {
   payment_status : text;
   price_amount : nat64;
   purchase_id : nat64;
+  payment_id_v2 : text;
   order_id : text;
   price_currency : text;
   payment_id : nat64;

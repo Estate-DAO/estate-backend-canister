@@ -33,8 +33,8 @@ pub struct CanisterState {
     // #[serde(default)]
     // pub payment_id_index: Option<BTreeMap<u64, BookingId>>,
     // Schema evolution metadata
-    // #[serde(default)]
-    // pub schema_metadata: Option<SchemaMetadata>,
+    #[serde(default)]
+    pub schema_metadata: SchemaMetadata,
     // pub controllers: Vec<Principal>,
     // pub admin_principal: Vec<Principal>
 }
@@ -71,9 +71,9 @@ impl CanisterState {
             users: BTreeMap::new(),
             email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
-            controllers: None,
+            controllers: None, 
             // payment_id_index: None,
-            // schema_metadata: None,
+            schema_metadata: SchemaMetadata::default(),
         }
     }
 

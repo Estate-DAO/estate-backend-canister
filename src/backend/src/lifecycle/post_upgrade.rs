@@ -6,6 +6,7 @@ use ic_stable_structures::reader::Reader;
 use std::borrow::BorrowMut;
 
 use crate::memory;
+use crate::migration::MigrationEngine;
 
 use crate::CanisterState;
 use crate::STATE as CANISTER_DATA;
@@ -13,6 +14,7 @@ use crate::STATE as CANISTER_DATA;
 #[post_upgrade]
 fn post_upgrade() {
     restore_data_from_stable_memory();
+    run_migrations();
     // save_upgrade_args_to_memory();
 }
 
@@ -32,6 +34,22 @@ fn restore_data_from_stable_memory() {
 
     CANISTER_DATA.with_borrow_mut(|cdata| {
         *cdata = canister_data;
+    });
+}
+
+fn run_migrations() {
+    let migration_engine = MigrationEngine::new();
+    
+    CANISTER_DATA.with_borrow_mut(|state| {
+        match migration_engine.apply_migrations(state) {
+            Ok(()) => {
+                ic_cdk::println!("Migrations applied successfully");
+            }
+            Err(e) => {
+                ic_cdk::println!("Migration failed: {}", e);
+                ic_cdk::trap(&format!("Migration failed: {}", e));
+            }
+        }
     });
 }
  

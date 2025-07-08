@@ -77,6 +77,17 @@ impl CanisterState {
         }
     }
 
+    pub fn get_current_migration_info(&self) -> (u64, String) {
+        let current_version = self.schema_metadata.current_version;
+        let description = self.schema_metadata.applied_migrations
+            .iter()
+            .find(|m| m.version == current_version)
+            .map(|m| m.description.clone())
+            .unwrap_or_else(|| "".to_string());
+        
+        (current_version, description)
+    }
+
     pub fn get_all_bookings(&self) -> Vec<BookingSummary> {
         self.users
             .iter()

@@ -1,6 +1,6 @@
 #[cfg(test)]
-mod tests {
-    use super::*;
+mod migration_engine_tests {
+    use crate::migration::{Migration, MigrationEngine, SchemaMetadata};
     use crate::models::*;
     use std::collections::BTreeMap;
 
@@ -25,7 +25,7 @@ mod tests {
         user_bookings.insert(booking_id.clone(), booking);
         
         let user_info = UserInfoAndBookings {
-            user_details: UserDetails::default(),
+            primary_user: AdultDetail::default(),
             bookings: user_bookings,
         };
         

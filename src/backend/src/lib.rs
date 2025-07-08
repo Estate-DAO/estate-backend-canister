@@ -196,6 +196,22 @@ fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
     STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
 }
 
+// #[ic_cdk_macros::query]
+// fn get_booking_id_by_payment_id(payment_id: u64) -> Option<BookingId> {
+//     STATE.with(|state| {
+//         state
+//             .borrow()
+//             .payment_id_index
+//             .as_ref()
+//             .and_then(|index| index.get(&payment_id).cloned())
+//     })
+// }
+
+#[ic_cdk_macros::query]
+fn get_current_migration_info() -> (u64, String) {
+    STATE.with(|state| state.borrow().get_current_migration_info())
+}
+
 // #[ic_cdk_macros::query(guard = "is_controller")]
 // fn get_booking_by_app_reference(app_reference: AppReference) -> Option<Booking> {
 //     STATE.with(|state| {

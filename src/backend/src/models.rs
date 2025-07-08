@@ -29,9 +29,9 @@ pub struct CanisterState {
     pub email_sent: Option<EmailSentStruct>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
-    // Index for payment_id -> booking_id mapping
-    // #[serde(default)]
-    // pub payment_id_index: Option<BTreeMap<u64, BookingId>>,
+    // Index for payment_id_v2 -> booking_id mapping (String format)
+    #[serde(default)]
+    pub payment_id_index: Option<BTreeMap<String, BookingId>>,
     // Schema evolution metadata
     #[serde(default)]
     pub schema_metadata: SchemaMetadata,
@@ -72,7 +72,7 @@ impl CanisterState {
             email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
             controllers: None, 
-            // payment_id_index: None,
+            payment_id_index: None,
             schema_metadata: SchemaMetadata::default(),
         }
     }
@@ -142,6 +142,28 @@ impl CanisterState {
     ) -> Result<Booking, String> {
         // validation - booking_id MUST exist.
 
+        // Check if payment_id_v2 is already used by another booking
+        let payment_id_v2 = &payment_details.payment_api_response.payment_id_v2;
+        if payment_id_v2.is_empty() {
+            return Err("Payment ID v2 cannot be empty".to_string());
+        }
+
+        // Initialize payment_id_index if it doesn't exist
+        if self.payment_id_index.is_none() {
+            self.payment_id_index = Some(BTreeMap::new());
+        }
+
+        if let Some(ref payment_index) = self.payment_id_index {
+            if let Some(existing_booking_id) = payment_index.get(payment_id_v2) {
+                if existing_booking_id != &booking_id {
+                    return Err(format!(
+                        "Payment ID v2 '{}' is already used by other booking",
+                        payment_id_v2,
+                    ));
+                }
+            }
+        }
+
         // Find the user by email
         let user_email = booking_id.get_user_email();
         let user = self
@@ -157,8 +179,21 @@ impl CanisterState {
             )
         })?;
 
+        // Get the old payment_id_v2 to remove from index if it exists
+        let old_payment_id_v2 = &booking.payment_details.payment_api_response.payment_id_v2;
+        if !old_payment_id_v2.is_empty() && old_payment_id_v2 != payment_id_v2 {
+            if let Some(ref mut payment_index) = self.payment_id_index {
+                payment_index.remove(old_payment_id_v2);
+            }
+        }
+
         // Update booking with payment details and status
         booking.update_payment_details_with_api_response(payment_details.clone());
+
+        // Update the payment_id_v2 index
+        if let Some(ref mut payment_index) = self.payment_id_index {
+            payment_index.insert(payment_id_v2.clone(), booking_id.clone());
+        }
 
         Ok(booking.clone())
     }

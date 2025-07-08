@@ -15,6 +15,7 @@ use crate::STATE as CANISTER_DATA;
 fn post_upgrade() {
     restore_data_from_stable_memory();
     run_migrations();
+    crate::rebuild_payment_id_index();
     // save_upgrade_args_to_memory();
 }
 

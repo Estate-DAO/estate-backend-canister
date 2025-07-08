@@ -36,41 +36,41 @@ thread_local! {
 // }
 
 
-// fn rebuild_payment_id_index() {
-//     STATE.with(|state| {
-//         let mut state = state.borrow_mut();
+pub fn rebuild_payment_id_index() {
+    STATE.with(|state| {
+        let mut state = state.borrow_mut();
 
-//         // Only rebuild if index doesn't exist or is empty (new field after upgrade)
-//         if let Some(ref payment_index) = state.payment_id_index {
-//             if !payment_index.is_empty() {
-//                 return; // Index already exists, no need to rebuild
-//             }
-//         }
+        // Only rebuild if index doesn't exist or is empty (new field after upgrade)
+        if let Some(ref payment_index) = state.payment_id_index {
+            if !payment_index.is_empty() {
+                return; // Index already exists, no need to rebuild
+            }
+        }
 
-//         // Collect payment_id -> booking_id mappings
-//         let mut payment_mappings = Vec::new();
-//         for user_info in state.users.values() {
-//             for booking in user_info.bookings.values() {
-//                 let payment_id = booking.payment_details.payment_api_response.payment_id;
-//                 if payment_id != 0 {
-//                     payment_mappings.push((payment_id, booking.booking_id.clone()));
-//                 }
-//             }
-//         }
+        // Collect payment_id_v2 -> booking_id mappings
+        let mut payment_mappings = Vec::new();
+        for user_info in state.users.values() {
+            for booking in user_info.bookings.values() {
+                let payment_id_v2 = &booking.payment_details.payment_api_response.payment_id_v2;
+                if !payment_id_v2.is_empty() {
+                    payment_mappings.push((payment_id_v2.clone(), booking.booking_id.clone()));
+                }
+            }
+        }
 
-//         // Initialize the index if it doesn't exist
-//         if state.payment_id_index.is_none() {
-//             state.payment_id_index = Some(std::collections::BTreeMap::new());
-//         }
+        // Initialize the index if it doesn't exist
+        if state.payment_id_index.is_none() {
+            state.payment_id_index = Some(std::collections::BTreeMap::new());
+        }
 
-//         // Build index from collected mappings
-//         if let Some(ref mut payment_index) = state.payment_id_index {
-//             for (payment_id, booking_id) in payment_mappings {
-//                 payment_index.insert(payment_id, booking_id);
-//             }
-//         }
-//     });
-// }
+        // Build index from collected mappings
+        if let Some(ref mut payment_index) = state.payment_id_index {
+            for (payment_id, booking_id) in payment_mappings {
+                payment_index.insert(payment_id, booking_id);
+            }
+        }
+    });
+}
 
 ////////////////////////////
 // CREATE / UPDATE
@@ -196,16 +196,16 @@ fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
     STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
 }
 
-// #[ic_cdk_macros::query]
-// fn get_booking_id_by_payment_id(payment_id: u64) -> Option<BookingId> {
-//     STATE.with(|state| {
-//         state
-//             .borrow()
-//             .payment_id_index
-//             .as_ref()
-//             .and_then(|index| index.get(&payment_id).cloned())
-//     })
-// }
+#[ic_cdk_macros::query]
+fn get_booking_id_by_payment_id_v2(payment_id_v2: String) -> Option<BookingId> {
+    STATE.with(|state| {
+        state
+            .borrow()
+            .payment_id_index
+            .as_ref()
+            .and_then(|index| index.get(&payment_id_v2).cloned())
+    })
+}
 
 #[ic_cdk_macros::query]
 fn get_current_migration_info() -> (u64, String) {

@@ -13,6 +13,9 @@ use std::cell::RefCell;
 pub mod memory;
 pub mod lifecycle;
 
+#[cfg(test)]
+mod payment_id_index_tests;
+
 thread_local! {
     static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
 }

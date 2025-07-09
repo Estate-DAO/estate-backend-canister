@@ -1,14 +1,10 @@
 use ciborium::de;
-use ic_cdk::api::call::ArgDecoderConfig;
-use ic_cdk::storage;
 use ic_cdk_macros::post_upgrade;
 use ic_stable_structures::reader::Reader;
-use std::borrow::BorrowMut;
 
 use crate::memory;
 use crate::migration::MigrationEngine;
 
-use crate::CanisterState;
 use crate::STATE as CANISTER_DATA;
 
 #[post_upgrade]

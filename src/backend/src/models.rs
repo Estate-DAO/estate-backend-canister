@@ -107,7 +107,7 @@ impl CanisterState {
         let user_profile = self
             .users
             .entry(email.to_string())
-            .or_insert_with(|| UserInfoAndBookings::default());
+            .or_default();
 
         let user_result = user_profile.add_booking(booking);
         println!("add_booking_and_user - {user_result:?}");
@@ -277,7 +277,7 @@ impl CanisterState {
 
         // if email_sent status for the booking_id  DOES NOT exist. if yes, check if booking_id exists.
         // if yes, create the entry with default value ( false ) and return it
-        let _ = self
+        self
             .get_email_sent_mut_value()
             .update_email_sent(booking_id.clone(), false)?;
         Ok(false)

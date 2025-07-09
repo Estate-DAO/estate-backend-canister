@@ -88,8 +88,7 @@ impl MigrationEngine {
     pub fn add_migration(&mut self, migration: Box<dyn Migration>) {
         self.migrations.push(migration);
         // Sort migrations by version to ensure correct order
-        self.migrations
-            .sort_by(|a, b| a.version().cmp(&b.version()));
+        self.migrations.sort_by_key(|a| a.version());
     }
 
     pub fn apply_migrations(&self, state: &mut CanisterState) -> Result<(), String> {
@@ -106,7 +105,7 @@ impl MigrationEngine {
         }
 
         // Sort unapplied migrations by version to ensure correct order
-        unapplied.sort_by(|a, b| a.version().cmp(&b.version()));
+        unapplied.sort_by_key(|a| a.version());
 
         for migration in unapplied {
             // Apply migration

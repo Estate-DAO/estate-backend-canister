@@ -67,8 +67,8 @@ pub fn rebuild_payment_id_index() {
 
         // Build index from collected mappings
         if let Some(ref mut payment_index) = state.payment_id_index {
-            for (payment_id, booking_id) in payment_mappings {
-                payment_index.insert(payment_id, booking_id);
+            for (payment_id_v2, booking_id) in payment_mappings {
+                payment_index.insert(payment_id_v2, booking_id);
             }
         }
     });

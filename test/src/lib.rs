@@ -4,9 +4,9 @@ use serde::Deserialize;
 use std::cell::RefCell;
 
 thread_local! {
-    static CTR: RefCell<u64> = RefCell::new(0);
+    static CTR: RefCell<u64> = const { RefCell::new(0) };
     static STR: RefCell<String> = RefCell::new("Hoi".to_string());
-    static GOVERNANCE: RefCell<Option<Principal>> = RefCell::new(None);
+    static GOVERNANCE: RefCell<Option<Principal>> = const { RefCell::new(None) };
 }
 
 #[derive(CandidType, Deserialize)]

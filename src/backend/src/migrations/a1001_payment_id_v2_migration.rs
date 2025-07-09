@@ -3,6 +3,8 @@ use crate::CanisterState;
 
 pub struct AddPaymentIdV2Migration;
 
+#[allow(clippy::disallowed_names)]
+#[allow(deprecated)]
 impl Migration for AddPaymentIdV2Migration {
     // NOTE: make sure that the version matches the filename 
     // for example
@@ -57,6 +59,7 @@ impl Migration for AddPaymentIdV2Migration {
         Ok(())
     }
 
+    // in migrations, we want to be using old fields for migration purpose. so clippy is allowed.
     fn validate(&self, state: &CanisterState) -> Result<(), String> {
         let mut validation_errors = Vec::new();
         

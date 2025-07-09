@@ -387,8 +387,7 @@ impl From<(&str, &Booking)> for BookingSummary {
             payment_id: booking
                 .payment_details
                 .payment_api_response
-                .payment_id
-                .to_string(),
+                .payment_id_v2.clone(),
             user_email: email.to_string(),
             hotel_name: hotel.hotel_name.clone(),
             destination,

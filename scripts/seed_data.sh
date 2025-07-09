@@ -87,7 +87,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 98765;
         order_id = "ORDER_SUCCESS_001";
         price_currency = "USD";
-        payment_id = 98765
+        payment_id_v2 = "98765";
+        payment_id = 0;
       }
     }
   }
@@ -161,7 +162,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 54321;
         order_id = "ORDER_FAILED_001";
         price_currency = "USD";
-        payment_id = 54321
+        payment_id_v2 = "54321";
+        payment_id = 0;
       }
     }
   }
@@ -242,7 +244,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 0;
         order_id = "";
         price_currency = "";
-        payment_id = 0
+        payment_id_v2 = "";
+        payment_id = 0;
       }
     }
   }
@@ -332,7 +335,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 0;
         order_id = "";
         price_currency = "";
-        payment_id = 0
+        payment_id_v2 = "";
+        payment_id = 0;
       }
     }
   }
@@ -408,7 +412,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 0;
         order_id = "";
         price_currency = "";
-        payment_id = 0
+        payment_id_v2 = "";
+        payment_id = 0;
       }
     }
   }

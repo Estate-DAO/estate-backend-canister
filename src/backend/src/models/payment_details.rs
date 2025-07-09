@@ -23,6 +23,7 @@ pub struct BEPaymentApiResponse {
     pub provider: String,
     // Legacy field for backward compatibility
     #[serde(default)]
+    #[deprecated(note = "Use payment_id_v2 instead")]
     pub payment_id: u64,
     // Primary payment_id field (String format)
     pub payment_id_v2: String,

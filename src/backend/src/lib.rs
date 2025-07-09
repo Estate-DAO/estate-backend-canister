@@ -7,7 +7,6 @@ mod migrations;
 use candid::Principal;
 pub use controller::is_controller;
 
-use ic_cdk::{post_upgrade, pre_upgrade, storage};
 use std::cell::RefCell;
 
 pub mod memory;

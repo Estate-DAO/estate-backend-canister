@@ -5,23 +5,23 @@ use serde::{Deserialize, Serialize};
 
 use super::{BEPaymentApiResponse, BackendPaymentStatus};
 
-fn payment_status_to_backend_status(status: &str, payment_id: u64) -> BackendPaymentStatus {
+fn payment_status_to_backend_status(status: &str, payment_id_v2: String) -> BackendPaymentStatus {
     match status {
         // Success states
         "completed" | "finished" => {
-            let trans_ref = format!("{} - COMPLETED", payment_id);
+            let trans_ref = format!("{} - COMPLETED", payment_id_v2);
             BackendPaymentStatus::Paid(trans_ref)
         }
 
         // Definitive failure states
         "failed" | "cancelled" | "expired" | "refunded" => {
-            let trans_ref = format!("{} - {}", payment_id, status.to_uppercase());
+            let trans_ref = format!("{} - {}", payment_id_v2, status.to_uppercase());
             BackendPaymentStatus::Unpaid(Some(trans_ref))
         }
 
         // Pending/unknown states
         _ => {
-            let trans_ref = format!("{} - {}", payment_id, status.to_uppercase());
+            let trans_ref = format!("{} - {}", payment_id_v2, status.to_uppercase());
             BackendPaymentStatus::Unpaid(Some(trans_ref))
         }
     }
@@ -116,7 +116,7 @@ impl Booking {
     pub fn get_booking_api_status(&self) -> BookingStatus {
         self.book_room_status
             .as_ref()
-            .map(|r| r.commit_booking.api_status.clone())
+            .map(|r| r.commit_booking.api_status)
             .unwrap_or(BookingStatus::BookFailed)
     }
 
@@ -149,7 +149,7 @@ impl Booking {
     pub fn update_backend_payment_status_from_api(&mut self, api_response: &BEPaymentApiResponse) {
         let payment_status = payment_status_to_backend_status(
             &api_response.payment_status,
-            api_response.payment_id
+            api_response.payment_id_v2.clone()
         );
         self.update_payment_status(payment_status);
     }

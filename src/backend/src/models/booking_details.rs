@@ -5,6 +5,28 @@ use serde::{Deserialize, Serialize};
 
 use super::{BEPaymentApiResponse, BackendPaymentStatus};
 
+fn payment_status_to_backend_status(status: &str, payment_id: u64) -> BackendPaymentStatus {
+    match status {
+        // Success states
+        "completed" | "finished" => {
+            let trans_ref = format!("{} - COMPLETED", payment_id);
+            BackendPaymentStatus::Paid(trans_ref)
+        }
+
+        // Definitive failure states
+        "failed" | "cancelled" | "expired" | "refunded" => {
+            let trans_ref = format!("{} - {}", payment_id, status.to_uppercase());
+            BackendPaymentStatus::Unpaid(Some(trans_ref))
+        }
+
+        // Pending/unknown states
+        _ => {
+            let trans_ref = format!("{} - {}", payment_id, status.to_uppercase());
+            BackendPaymentStatus::Unpaid(Some(trans_ref))
+        }
+    }
+}
+
 pub type AppReference = String;
 pub type UserEmail = String;
 
@@ -125,20 +147,10 @@ impl Booking {
     }
 
     pub fn update_backend_payment_status_from_api(&mut self, api_response: &BEPaymentApiResponse) {
-        let payment_status = match api_response.payment_status.as_str() {
-            "finished" => {
-                let trans_ref = format!("{:?} - COMPLETED", api_response.payment_id);
-                BackendPaymentStatus::Paid(trans_ref)
-            }
-            "cancelled" => {
-                let trans_ref = format!("{:?} - CANCELLED", api_response.payment_id);
-                BackendPaymentStatus::Unpaid(Some(trans_ref))
-            }
-            _ => {
-                let trans_ref = format!("{:?} - PENDING", api_response.payment_id);
-                BackendPaymentStatus::Unpaid(Some(trans_ref))
-            }
-        };
+        let payment_status = payment_status_to_backend_status(
+            &api_response.payment_status,
+            api_response.payment_id
+        );
         self.update_payment_status(payment_status);
     }
 

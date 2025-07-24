@@ -195,6 +195,7 @@ fn get_email_sent(booking_id: BookingId) -> Result<bool, String> {
 
 #[ic_cdk_macros::query]
 fn get_booking_by_id(booking_id: BookingId) -> Option<Booking> {
+    print!("get_booking_by_id - {booking_id:?}");
     STATE.with(|state| state.borrow().get_booking_by_id(&booking_id).cloned())
 }
 

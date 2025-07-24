@@ -121,9 +121,13 @@ impl CanisterState {
     pub fn get_booking_by_id(&self, booking_id: &BookingId) -> Option<&Booking> {
         // First try to find the user with the email from the booking_id
         let user_email = booking_id.get_user_email();
+        print!("models.rs.get_booking_by_id - {booking_id:?} - {user_email:?}");
         if let Some(user) = self.users.get(user_email) {
+            print!("models.rs - self.users.get - {user:?} - {user_email:?}");
+
             // Then try to get the booking from that user
             if let Some(booking) = user.get_booking_by_id(booking_id) {
+                print!("models.rs - user.get_booking_by_id - {booking_id:?} - {user_email:?} - {booking:?}");
                 return Some(booking);
             }
         }

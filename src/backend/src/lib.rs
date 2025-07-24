@@ -215,6 +215,26 @@ fn get_current_migration_info() -> (u64, String) {
     STATE.with(|state| state.borrow().get_current_migration_info())
 }
 
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn run_migrations() -> Result<String, String> {
+    use crate::migration::MigrationEngine;
+    
+    STATE.with(|state| {
+        let mut state = state.borrow_mut();
+        let engine = MigrationEngine::new();
+        
+        let pending_count = engine.get_pending_migrations(&state).len();
+        if pending_count == 0 {
+            return Ok("No pending migrations to run".to_string());
+        }
+        
+        engine.apply_migrations(&mut state)
+            .map_err(|e| format!("Migration failed: {}", e))?;
+        
+        Ok(format!("Successfully applied {} migration(s)", pending_count))
+    })
+}
+
 // #[ic_cdk_macros::query(guard = "is_controller")]
 // fn get_booking_by_app_reference(app_reference: AppReference) -> Option<Booking> {
 //     STATE.with(|state| {

@@ -35,8 +35,7 @@ pub struct CanisterState {
     // Schema evolution metadata
     #[serde(default)]
     pub schema_metadata: SchemaMetadata,
-    // pub controllers: Vec<Principal>,
-    // pub admin_principal: Vec<Principal>
+    
 }
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]

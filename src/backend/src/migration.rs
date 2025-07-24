@@ -1,4 +1,4 @@
-use crate::{migrations::AddPaymentIdV2Migration, CanisterState};
+use crate::{migrations::{AddDefaultControllersMigration, AddPaymentIdV2Migration}, CanisterState};
 use candid::CandidType;
 use ic_cdk::api::time;
 use serde::{Deserialize, Serialize};
@@ -81,6 +81,7 @@ impl MigrationEngine {
         Self {
             migrations: vec![
                 Box::new(AddPaymentIdV2Migration),
+                Box::new(AddDefaultControllersMigration),
             ],
         }
     }

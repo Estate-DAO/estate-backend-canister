@@ -35,6 +35,11 @@ pub struct CanisterState {
     // Schema evolution metadata
     #[serde(default)]
     pub schema_metadata: SchemaMetadata,
+
+    // Index for principal -> email mapping
+    #[serde(default)]
+    pub user_principal_email_index: BTreeMap<Principal, String>,
+
     
 }
 
@@ -73,6 +78,7 @@ impl CanisterState {
             controllers: None, 
             payment_id_index: None,
             schema_metadata: SchemaMetadata::default(),
+            user_principal_email_index: BTreeMap::new(),
         }
     }
 

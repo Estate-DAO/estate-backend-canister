@@ -235,6 +235,23 @@ fn run_migrations() -> Result<String, String> {
     })
 }
 
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn update_user_principal_email_index(principal: Principal, email: String) -> Result<String, String> {
+    STATE.with(|state| {
+        let mut state = state.borrow_mut();
+        
+        // Validate email format (basic validation)
+        if email.is_empty() || !email.contains('@') {
+            return Err("Invalid email format".to_string());
+        }
+        
+        // Update the index
+        state.user_principal_email_index.insert(principal, email.clone());
+        
+        Ok(format!("Successfully mapped principal {} to email {}", principal, email))
+    })
+}
+
 #[ic_cdk_macros::query]
 fn my_bookings() -> Vec<Booking> {
    let user = ic_cdk::caller();

@@ -144,6 +144,10 @@ impl CanisterState {
         self.users.get(email).map(|profile| &profile.bookings)
     }
 
+    pub fn get_user_bookings_by_principal(&self, principal: Principal) -> Option<&BTreeMap<BookingId, Booking>> {
+        self.user_principal_email_index.get(&principal).and_then(|email| self.get_user_bookings(email))
+    }
+
     pub fn update_payment_details(
         &mut self,
         booking_id: BookingId,

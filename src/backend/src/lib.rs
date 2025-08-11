@@ -235,6 +235,17 @@ fn run_migrations() -> Result<String, String> {
     })
 }
 
+#[ic_cdk_macros::query]
+fn my_bookings() -> Vec<Booking> {
+   let user = ic_cdk::caller();
+   STATE.with(|state| {
+       state.borrow()
+           .get_user_bookings_by_principal(user)
+           .map(|bookings| bookings.values().cloned().collect())
+           .unwrap_or_default()
+   })
+}
+
 // #[ic_cdk_macros::query(guard = "is_controller")]
 // fn get_booking_by_app_reference(app_reference: AppReference) -> Option<Booking> {
 //     STATE.with(|state| {

@@ -87,7 +87,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 98765;
         order_id = "ORDER_SUCCESS_001";
         price_currency = "USD";
-        payment_id = 98765
+        payment_id_v2 = "98765";
+        payment_id = 0;
       }
     }
   }
@@ -161,7 +162,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 54321;
         order_id = "ORDER_FAILED_001";
         price_currency = "USD";
-        payment_id = 54321
+        payment_id_v2 = "54321";
+        payment_id = 0;
       }
     }
   }
@@ -242,7 +244,8 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 0;
         order_id = "";
         price_currency = "";
-        payment_id = 0
+        payment_id_v2 = "";
+        payment_id = 0;
       }
     }
   }
@@ -332,7 +335,85 @@ dfx canister call estate_backend add_booking '(
         purchase_id = 0;
         order_id = "";
         price_currency = "";
-        payment_id = 0
+        payment_id_v2 = "";
+        payment_id = 0;
+      }
+    }
+  }
+)'
+
+
+
+# Test Case 5: Booking no status
+dfx canister call estate_backend add_booking '(
+  "tripathi.abhishek.iitkgp+one@gmail.com",
+  record {
+    booking_id = record {
+      app_reference = "ABC1231";
+      email = "tripathi.abhishek.iitkgp+one@gmail.com"
+    };
+    guests = record {
+      adults = vec {
+        record {
+          first_name = "John";
+          last_name = opt "Doe";
+          email = opt "user@example.com";
+          phone = opt "+1-555-9876"
+        }
+      };
+      children = vec {}
+    };
+    book_room_status = null;
+    user_selected_hotel_room_details = record {
+      hotel_details = record {
+        hotel_code = "HYATT789";
+        hotel_name = "Grand Hyatt";
+        hotel_image = "https://example.com/hyatt.jpg";
+        block_room_id = "BLOCK123";
+        hotel_location = "Downtown, Chicago";
+        hotel_token = "TOKEN123"
+      };
+      room_details = vec {
+        record {
+          room_price = 499.99;
+          room_unique_id = "PREM789";
+          room_type_name = "Premium Suite"
+        }
+      };
+      destination = opt record {
+        city_id = "CHI";
+        city = "Chicago";
+        country_code = "US";
+        country_name = "United States"
+      };
+      requested_payment_amount = 499.99;
+      date_range = record {
+        start = record { 2025; 4; 15 };
+        end = record { 2025; 4; 17 }
+      }
+    };
+    payment_details = record {
+      booking_id = record {
+        app_reference = "ABC1231";
+        email = "tripathi.abhishek.iitkgp+one@gmail.com"
+      };
+      payment_status = variant { Unpaid = opt "" };
+      payment_api_response = record {
+        updated_at = "";
+        actually_paid = 0.00;
+        provider = "";
+        invoice_id = 0  ;
+        order_description = "";
+        pay_amount = 0.00;
+        pay_currency = "";
+        created_at = "";
+        payment_status = "";
+        price_amount = 0;
+        purchase_id = 0;
+        order_id = "";
+        price_currency = "";
+        payment_id_v2 = "";
+        payment_id = 0;
       }
     }
   }

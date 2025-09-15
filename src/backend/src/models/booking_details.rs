@@ -5,6 +5,28 @@ use serde::{Deserialize, Serialize};
 
 use super::{BEPaymentApiResponse, BackendPaymentStatus};
 
+fn payment_status_to_backend_status(status: &str, payment_id_v2: String) -> BackendPaymentStatus {
+    match status {
+        // Success states
+        "completed" | "finished" => {
+            let trans_ref = format!("{} - COMPLETED", payment_id_v2);
+            BackendPaymentStatus::Paid(trans_ref)
+        }
+
+        // Definitive failure states
+        "failed" | "cancelled" | "expired" | "refunded" => {
+            let trans_ref = format!("{} - {}", payment_id_v2, status.to_uppercase());
+            BackendPaymentStatus::Unpaid(Some(trans_ref))
+        }
+
+        // Pending/unknown states
+        _ => {
+            let trans_ref = format!("{} - {}", payment_id_v2, status.to_uppercase());
+            BackendPaymentStatus::Unpaid(Some(trans_ref))
+        }
+    }
+}
+
 pub type AppReference = String;
 pub type UserEmail = String;
 
@@ -94,7 +116,7 @@ impl Booking {
     pub fn get_booking_api_status(&self) -> BookingStatus {
         self.book_room_status
             .as_ref()
-            .map(|r| r.commit_booking.api_status.clone())
+            .map(|r| r.commit_booking.api_status)
             .unwrap_or(BookingStatus::BookFailed)
     }
 
@@ -125,20 +147,10 @@ impl Booking {
     }
 
     pub fn update_backend_payment_status_from_api(&mut self, api_response: &BEPaymentApiResponse) {
-        let payment_status = match api_response.payment_status.as_str() {
-            "finished" => {
-                let trans_ref = format!("{:?} - COMPLETED", api_response.payment_id);
-                BackendPaymentStatus::Paid(trans_ref)
-            }
-            "cancelled" => {
-                let trans_ref = format!("{:?} - CANCELLED", api_response.payment_id);
-                BackendPaymentStatus::Unpaid(Some(trans_ref))
-            }
-            _ => {
-                let trans_ref = format!("{:?} - PENDING", api_response.payment_id);
-                BackendPaymentStatus::Unpaid(Some(trans_ref))
-            }
-        };
+        let payment_status = payment_status_to_backend_status(
+            &api_response.payment_status,
+            api_response.payment_id_v2.clone()
+        );
         self.update_payment_status(payment_status);
     }
 
@@ -339,15 +351,26 @@ impl ResolvedBookingStatus {
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct BookingSummary {
+    // ids
     pub booking_id: BookingId,
+    // pub travel_provider_id: String,
+    pub payment_id: String,
+
+    // user details
     pub user_email: String,
+
+    // hotel details
     pub hotel_name: String,
     pub destination: String,
+    pub booking_dates: String,
     pub nights: u32,
+
+    // statuses
     pub payment_status: String,
     pub booking_status: String,
 }
 
+// (user_email , Booking)
 impl From<(&str, &Booking)> for BookingSummary {
     fn from((email, booking): (&str, &Booking)) -> Self {
         let hotel = &booking.user_selected_hotel_room_details.hotel_details;
@@ -360,6 +383,11 @@ impl From<(&str, &Booking)> for BookingSummary {
 
         BookingSummary {
             booking_id: booking.booking_id.clone(),
+            // travel_provider_id: booking.get_travel_provider_id()
+            payment_id: booking
+                .payment_details
+                .payment_api_response
+                .payment_id_v2.clone(),
             user_email: email.to_string(),
             hotel_name: hotel.hotel_name.clone(),
             destination,
@@ -369,6 +397,10 @@ impl From<(&str, &Booking)> for BookingSummary {
                 .no_of_nights(),
             payment_status: booking.payment_details.get_status_display(),
             booking_status: booking.get_booking_status(),
+            booking_dates: booking
+                .user_selected_hotel_room_details
+                .date_range
+                .to_string(),
         }
     }
 }

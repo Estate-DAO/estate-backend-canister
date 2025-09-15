@@ -3,16 +3,18 @@ use serde::{Deserialize, Serialize};
 use serde_json_any_key::any_key_map;
 use std::collections::BTreeMap;
 
-mod payment_details;
+use crate::migration::SchemaMetadata;
+
+pub mod payment_details;
 pub use payment_details::*;
 
-mod user_details;
+pub mod user_details;
 pub use user_details::*;
 
-mod booking_details;
+pub mod booking_details;
 pub use booking_details::*;
 
-mod greet;
+pub mod greet;
 pub use greet::*;
 
 // mod booking_state;
@@ -27,8 +29,18 @@ pub struct CanisterState {
     pub email_sent: Option<EmailSentStruct>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
-    // pub controllers: Vec<Principal>,
-    // pub admin_principal: Vec<Principal>
+    // Index for payment_id_v2 -> booking_id mapping (String format)
+    #[serde(default)]
+    pub payment_id_index: Option<BTreeMap<String, BookingId>>,
+    // Schema evolution metadata
+    #[serde(default)]
+    pub schema_metadata: SchemaMetadata,
+
+    // Index for principal -> email mapping
+    #[serde(default)]
+    pub user_principal_email_index: BTreeMap<Principal, String>,
+
+    
 }
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
@@ -63,8 +75,33 @@ impl CanisterState {
             users: BTreeMap::new(),
             email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
-            controllers: None,
+            controllers: None, 
+            payment_id_index: None,
+            schema_metadata: SchemaMetadata::default(),
+            user_principal_email_index: BTreeMap::new(),
         }
+    }
+
+    pub fn get_current_migration_info(&self) -> (u64, String) {
+        let current_version = self.schema_metadata.current_version;
+        let description = self.schema_metadata.applied_migrations
+            .iter()
+            .find(|m| m.version == current_version)
+            .map(|m| m.description.clone())
+            .unwrap_or_else(|| "".to_string());
+        
+        (current_version, description)
+    }
+
+    pub fn get_all_bookings(&self) -> Vec<BookingSummary> {
+        self.users
+            .iter()
+            .flat_map(|(user_email, user)| {
+                user.bookings
+                    .values()
+                    .map(|booking| BookingSummary::from((user_email.as_str(), booking)))
+            })
+            .collect()
     }
 
     pub fn add_booking_and_user(
@@ -75,7 +112,7 @@ impl CanisterState {
         let user_profile = self
             .users
             .entry(email.to_string())
-            .or_insert_with(|| UserInfoAndBookings::default());
+            .or_default();
 
         let user_result = user_profile.add_booking(booking);
         println!("add_booking_and_user - {user_result:?}");
@@ -89,9 +126,13 @@ impl CanisterState {
     pub fn get_booking_by_id(&self, booking_id: &BookingId) -> Option<&Booking> {
         // First try to find the user with the email from the booking_id
         let user_email = booking_id.get_user_email();
+        print!("models.rs.get_booking_by_id - {booking_id:?} - {user_email:?}");
         if let Some(user) = self.users.get(user_email) {
+            print!("models.rs - self.users.get - {user:?} - {user_email:?}");
+
             // Then try to get the booking from that user
             if let Some(booking) = user.get_booking_by_id(booking_id) {
+                print!("models.rs - user.get_booking_by_id - {booking_id:?} - {user_email:?} - {booking:?}");
                 return Some(booking);
             }
         }
@@ -103,12 +144,38 @@ impl CanisterState {
         self.users.get(email).map(|profile| &profile.bookings)
     }
 
+    pub fn get_user_bookings_by_principal(&self, principal: Principal) -> Option<&BTreeMap<BookingId, Booking>> {
+        self.user_principal_email_index.get(&principal).and_then(|email| self.get_user_bookings(email))
+    }
+
     pub fn update_payment_details(
         &mut self,
         booking_id: BookingId,
         payment_details: PaymentDetails,
     ) -> Result<Booking, String> {
         // validation - booking_id MUST exist.
+
+        // Check if payment_id_v2 is already used by another booking
+        let payment_id_v2 = &payment_details.payment_api_response.payment_id_v2;
+        if payment_id_v2.is_empty() {
+            return Err("Payment ID v2 cannot be empty".to_string());
+        }
+
+        // Initialize payment_id_index if it doesn't exist
+        if self.payment_id_index.is_none() {
+            self.payment_id_index = Some(BTreeMap::new());
+        }
+
+        if let Some(ref payment_index) = self.payment_id_index {
+            if let Some(existing_booking_id) = payment_index.get(payment_id_v2) {
+                if existing_booking_id != &booking_id {
+                    return Err(format!(
+                        "Payment ID v2 '{}' is already used by other booking",
+                        payment_id_v2,
+                    ));
+                }
+            }
+        }
 
         // Find the user by email
         let user_email = booking_id.get_user_email();
@@ -125,8 +192,21 @@ impl CanisterState {
             )
         })?;
 
+        // Get the old payment_id_v2 to remove from index if it exists
+        let old_payment_id_v2 = &booking.payment_details.payment_api_response.payment_id_v2;
+        if !old_payment_id_v2.is_empty() && old_payment_id_v2 != payment_id_v2 {
+            if let Some(ref mut payment_index) = self.payment_id_index {
+                payment_index.remove(old_payment_id_v2);
+            }
+        }
+
         // Update booking with payment details and status
         booking.update_payment_details_with_api_response(payment_details.clone());
+
+        // Update the payment_id_v2 index
+        if let Some(ref mut payment_index) = self.payment_id_index {
+            payment_index.insert(payment_id_v2.clone(), booking_id.clone());
+        }
 
         Ok(booking.clone())
     }
@@ -210,7 +290,7 @@ impl CanisterState {
 
         // if email_sent status for the booking_id  DOES NOT exist. if yes, check if booking_id exists.
         // if yes, create the entry with default value ( false ) and return it
-        let _ = self
+        self
             .get_email_sent_mut_value()
             .update_email_sent(booking_id.clone(), false)?;
         Ok(false)

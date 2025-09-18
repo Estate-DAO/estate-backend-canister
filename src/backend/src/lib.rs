@@ -16,7 +16,7 @@ pub mod lifecycle;
 mod payment_id_index_tests;
 
 thread_local! {
-    static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
+    pub static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
 }
 
 // #[ic_cdk_macros::init]

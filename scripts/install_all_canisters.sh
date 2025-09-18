@@ -4,7 +4,7 @@ dfx stop && \
     dfx canister create estate_backend
 
 scripts/candid_generator.sh
-cp ./src/backend/can.did ../estate-fe-pr-review/ssr/did/backend.did
+cp ./src/backend/can.did ../estate-dao-platform-leptos-ssr/ssr/did/backend.did
 
 dfx deploy
 

@@ -7,9 +7,9 @@ on:
 
 jobs:
   test:
+    name: Test code
     runs-on: ubuntu-latest
     steps:
-      - name: Test code
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --all --locked --verbose

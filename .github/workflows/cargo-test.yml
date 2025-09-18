@@ -9,11 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          rust-version: stable
-      - name: Run cargo test
+      - name: Test code
+        uses: actions/checkout@v5
+        uses: dtolnay/rust-toolchain@stable
         run: cargo test --all --locked --verbose

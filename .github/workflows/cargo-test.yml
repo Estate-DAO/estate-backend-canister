@@ -10,6 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Test code
-        uses: actions/checkout@v5
-        uses: dtolnay/rust-toolchain@stable
-        run: cargo test --all --locked --verbose
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --all --locked --verbose

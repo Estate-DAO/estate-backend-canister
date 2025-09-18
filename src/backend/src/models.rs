@@ -22,10 +22,11 @@ pub use greet::*;
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct CanisterState {
-    // Map from email/phone watever to UserInfoAndBookings
+    // Map from email watever to UserInfoAndBookings
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub users:
     pub users: BTreeMap<String, UserInfoAndBookings>,
+    pub wishlist: BTreeMap<String, Vec<HotelId>>,
     pub email_sent: Option<EmailSentStruct>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
@@ -72,6 +73,7 @@ impl EmailSentStruct {
 impl CanisterState {
     pub fn new() -> Self {
         Self {
+            wishlist: BTreeMap::new(),
             users: BTreeMap::new(),
             email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
@@ -80,6 +82,34 @@ impl CanisterState {
             schema_metadata: SchemaMetadata::default(),
             user_principal_email_index: BTreeMap::new(),
         }
+    }
+
+    pub fn add_to_wishlist_by_email(&mut self, email: String, hotel_id: HotelId) {
+        let wishlist = self.wishlist.entry(email).or_default();
+        if !wishlist.contains(&hotel_id) {
+            wishlist.push(hotel_id);
+        }
+    }
+
+    pub fn remove_from_wishlist_by_email(&mut self, email: &str, hotel_code: &str) {
+        if let Some(wishlist) = self.wishlist.get_mut(email) {
+            wishlist.retain(|hotel| hotel.hotel_code != hotel_code);
+        }
+    }
+
+    pub fn get_wishlist_by_email(&self, email: &str) -> Option<&Vec<HotelId>> {
+        self.wishlist.get(email)
+    }
+
+    pub fn clear_wishlist_by_email(&mut self, email: &str) {
+        self.wishlist.remove(email);
+    }
+
+    pub fn get_wishlist_count_for_a_hotel_id(&self, hotel_code: &str) -> usize {
+        self.wishlist
+            .values()
+            .filter(|wishlist| wishlist.iter().any(|hotel| hotel.hotel_code == hotel_code))
+            .count()
     }
 
     pub fn get_current_migration_info(&self) -> (u64, String) {

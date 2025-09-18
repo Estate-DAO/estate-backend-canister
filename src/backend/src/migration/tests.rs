@@ -44,7 +44,7 @@ mod migration_engine_tests {
     #[test]
     fn test_migration_engine_new() {
         let engine = MigrationEngine::new();
-        assert_eq!(engine.migrations.len(), 1); // Should have AddPaymentIdV2Migration
+        assert_eq!(engine.migrations.len(), 2); // Should have AddPaymentIdV2Migration
     }
 
     #[test]
@@ -64,7 +64,7 @@ mod migration_engine_tests {
         let state = create_test_state(); // Default version is 1000
         
         let pending = engine.get_pending_migrations(&state);
-        assert_eq!(pending.len(), 1);
+        assert_eq!(pending.len(), 2);
         assert_eq!(pending[0].version(), 1001);
     }
 
@@ -78,7 +78,7 @@ mod migration_engine_tests {
         assert!(result.is_ok());
         
         let applied = engine.get_applied_migrations(&state);
-        assert_eq!(applied.len(), 1);
+        assert_eq!(applied.len(), 2);
         assert_eq!(applied[0].version, 1001);
         assert_eq!(applied[0].description, "Add payment_id_v2 field and migrate existing payment_id data");
     }

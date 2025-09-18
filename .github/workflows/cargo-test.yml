@@ -12,4 +12,4 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all --locked --verbose
+      - run: cargo test --all --locked

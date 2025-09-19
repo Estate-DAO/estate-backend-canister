@@ -196,6 +196,12 @@ impl Booking {
 // }
 
 // HotelRoomDetails scope
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default, PartialEq)]
+pub struct HotelId {
+    pub hotel_code: String,
+}
+
+// HotelRoomDetails scope
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
 pub struct HotelRoomDetails {
     pub hotel_details: HotelDetails,

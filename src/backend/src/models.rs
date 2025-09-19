@@ -22,10 +22,12 @@ pub use greet::*;
 
 #[derive(CandidType, Deserialize, Default, Serialize, Clone, Debug)]
 pub struct CanisterState {
-    // Map from email/phone watever to UserInfoAndBookings
+    // Map from email watever to UserInfoAndBookings
     // #[serde(skip, default = "_default_slot_details_map")]
     // pub users:
     pub users: BTreeMap<String, UserInfoAndBookings>,
+    #[serde(default)]
+    pub wishlist: BTreeMap<String, Vec<HotelId>>,
     pub email_sent: Option<EmailSentStruct>,
     #[serde(default)]
     pub controllers: Option<Vec<Principal>>,
@@ -72,6 +74,7 @@ impl EmailSentStruct {
 impl CanisterState {
     pub fn new() -> Self {
         Self {
+            wishlist: BTreeMap::new(),
             users: BTreeMap::new(),
             email_sent: None,
             // ongoing_bookings: BTreeMap::new(),
@@ -80,6 +83,34 @@ impl CanisterState {
             schema_metadata: SchemaMetadata::default(),
             user_principal_email_index: BTreeMap::new(),
         }
+    }
+
+    pub fn add_to_wishlist_by_email(&mut self, email: String, hotel_id: HotelId) {
+        let wishlist = self.wishlist.entry(email).or_default();
+        if !wishlist.contains(&hotel_id) {
+            wishlist.push(hotel_id);
+        }
+    }
+
+    pub fn remove_from_wishlist_by_email(&mut self, email: &str, hotel_code: &str) {
+        if let Some(wishlist) = self.wishlist.get_mut(email) {
+            wishlist.retain(|hotel| hotel.hotel_code != hotel_code);
+        }
+    }
+
+    pub fn get_wishlist_by_email(&self, email: &str) -> Option<&Vec<HotelId>> {
+        self.wishlist.get(email)
+    }
+
+    pub fn clear_wishlist_by_email(&mut self, email: &str) {
+        self.wishlist.remove(email);
+    }
+
+    pub fn get_wishlist_count_for_a_hotel_id(&self, hotel_code: &str) -> usize {
+        self.wishlist
+            .values()
+            .filter(|wishlist| wishlist.iter().any(|hotel| hotel.hotel_code == hotel_code))
+            .count()
     }
 
     pub fn get_current_migration_info(&self) -> (u64, String) {
@@ -553,3 +584,80 @@ impl CanisterState {
 //         assert!(result.is_err());
 //     }
 // }
+
+
+#[cfg(test)]
+mod wishlist_tests {
+    use super::*;
+
+
+    fn make_hotel(hotel_code: &str) -> HotelId {
+        HotelId {
+            hotel_code: hotel_code.to_string(),
+        }
+    }
+
+    #[test]
+    fn test_add_to_wishlist_by_email() {
+        let mut state = CanisterState::new();
+        let email = "user@example.com".to_string();
+        let hotel = make_hotel("H100");
+        state.add_to_wishlist_by_email(email.clone(), hotel.clone());
+        let wishlist = state.get_wishlist_by_email(&email).unwrap();
+        assert_eq!(wishlist.len(), 1);
+        assert_eq!(wishlist[0].hotel_code, "H100");
+        // Adding same hotel again should not duplicate
+        state.add_to_wishlist_by_email(email.clone(), hotel.clone());
+        let wishlist = state.get_wishlist_by_email(&email).unwrap();
+        assert_eq!(wishlist.len(), 1);
+    }
+
+    #[test]
+    fn test_remove_from_wishlist_by_email() {
+        let mut state = CanisterState::new();
+        let email = "user@example.com";
+        let hotel1 = make_hotel("H100");
+        let hotel2 = make_hotel("H200");
+        state.add_to_wishlist_by_email(email.to_string(), hotel1.clone());
+        state.add_to_wishlist_by_email(email.to_string(), hotel2.clone());
+        state.remove_from_wishlist_by_email(email, "H100");
+        let wishlist = state.get_wishlist_by_email(email).unwrap();
+        assert_eq!(wishlist.len(), 1);
+        assert_eq!(wishlist[0].hotel_code, "H200");
+    }
+
+    #[test]
+    fn test_get_wishlist_by_email() {
+        let mut state = CanisterState::new();
+        let email = "user@example.com";
+        assert!(state.get_wishlist_by_email(email).is_none());
+        let hotel = make_hotel("H100");
+        state.add_to_wishlist_by_email(email.to_string(), hotel.clone());
+        let wishlist = state.get_wishlist_by_email(email).unwrap();
+        assert_eq!(wishlist.len(), 1);
+        assert_eq!(wishlist[0].hotel_code, "H100");
+    }
+
+    #[test]
+    fn test_clear_wishlist_by_email() {
+        let mut state = CanisterState::new();
+        let email = "user@example.com";
+        let hotel = make_hotel("H100");
+        state.add_to_wishlist_by_email(email.to_string(), hotel);
+        state.clear_wishlist_by_email(email);
+        assert!(state.get_wishlist_by_email(email).is_none());
+    }
+
+    #[test]
+    fn test_get_wishlist_count_for_a_hotel_id() {
+        let mut state = CanisterState::new();
+        let hotel1 = make_hotel("H100");
+        let hotel2 = make_hotel("H200");
+        state.add_to_wishlist_by_email("a@example.com".to_string(), hotel1.clone());
+        state.add_to_wishlist_by_email("b@example.com".to_string(), hotel1.clone());
+        state.add_to_wishlist_by_email("c@example.com".to_string(), hotel2.clone());
+        assert_eq!(state.get_wishlist_count_for_a_hotel_id("H100"), 2);
+        assert_eq!(state.get_wishlist_count_for_a_hotel_id("H200"), 1);
+        assert_eq!(state.get_wishlist_count_for_a_hotel_id("H300"), 0);
+    }
+}

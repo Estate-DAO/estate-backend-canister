@@ -16,7 +16,7 @@ pub mod lifecycle;
 mod payment_id_index_tests;
 
 thread_local! {
-    static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
+    pub static STATE: RefCell<CanisterState> = RefCell::new(CanisterState::default());
 }
 
 // #[ic_cdk_macros::init]
@@ -150,12 +150,51 @@ fn update_book_room_response(
     })
 }
 
-// #[ic_cdk_macros::query]
-// fn get_booking(email: String, booking_id: String) -> Option<Booking> {
-//     STATE.with(|state| {
-//         state.borrow().get_booking(&email, &booking_id).cloned()
-//     })
-// }
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn add_to_wishlist_by_email(email: String, hotel_id: HotelId) -> Result<String, String> {
+    STATE.with(|state| {
+        state.borrow_mut().add_to_wishlist_by_email(email, hotel_id);
+        Ok("Added to wishlist".to_string())
+    })
+}
+
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn remove_from_wishlist_by_email(email: String, hotel_id: HotelId) -> Result<String, String> {
+    STATE.with(|state| {
+        state.borrow_mut().remove_from_wishlist_by_email(&email, &hotel_id.hotel_code);
+        Ok("Removed from wishlist".to_string())
+    })
+}
+
+#[ic_cdk_macros::update(guard = "is_controller")]
+fn clear_wishlist_by_email(email: String) -> Result<String, String> {
+    STATE.with(|state| {
+        state.borrow_mut().clear_wishlist_by_email(&email);
+        Ok("Cleared wishlist".to_string())
+    })
+}
+
+#[ic_cdk_macros::query]
+fn get_wishlist_count_for_a_hotel_id(hotel_id: String) -> Result<usize, String> {
+    STATE.with(|state| {
+        let count = state.borrow().get_wishlist_count_for_a_hotel_id(&hotel_id);
+        Ok(count)
+    })
+}
+
+#[ic_cdk_macros::query]
+fn get_wishlist_by_email(email: String) -> Vec<HotelId> {
+    STATE.with(|state| {
+        state
+            .borrow()
+            .wishlist
+            .get(&email)
+            .cloned()
+            .unwrap_or_default()
+    })
+}
+
+
 
 #[ic_cdk_macros::query(guard = "is_controller")]
 fn get_all_bookings() -> Vec<BookingSummary> {

@@ -1,8 +1,6 @@
 name: Release and submit proposal
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
 
